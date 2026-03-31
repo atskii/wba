@@ -5,7 +5,7 @@ import {
   BookOpen, Brain, RefreshCw, Eye, EyeOff, LogOut, ExternalLink, 
   Filter, Flame, Menu, Bell, Settings, TrendingUp, TrendingDown, 
   Minus, MessageSquare, Leaf, Star, AlertCircle, CheckCircle,
-  Play, Pause, RotateCcw, Target, Sparkles
+  Play, Pause, RotateCcw, Target, Sparkles, Trash2
 } from "lucide-react";
 
 // ═══════════════════════════════════════════════════
@@ -482,7 +482,7 @@ function FocusModeView({ task, onClose, onComplete }) {
   );
 }
 
-function TaskCard({task,onToggle, onFocus}) {
+function TaskCard({task,onToggle, onFocus, onDelete})  {
   const pr=PRIOS.find(x=>x.id===task.p)||PRIOS[0];
   const cat=CATS.find(x=>x.id===task.cat)||CATS[0];
   return (
@@ -512,11 +512,16 @@ function TaskCard({task,onToggle, onFocus}) {
    <PBadge p={task.p}/>
 </div>
         </div>
-        {!task.done && (
-          <button onClick={() => onFocus(task)} title="Rozpocznij Głębokie Skupienie" className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm">
-            <Play size={14} className="ml-0.5"/>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+          {!task.done && (
+            <button onClick={() => onFocus(task)} title="Rozpocznij Głębokie Skupienie" className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm">
+              <Play size={14} className="ml-0.5"/>
+            </button>
+          )}
+          <button onClick={() => onDelete(task.id)} title="Usuń zadanie" className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm">
+            <Trash2 size={14}/>
           </button>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -790,7 +795,7 @@ function StreakPlant({ tasks }) {
 // ═══════════════════════════════════════════════════
 //  DASHBOARD VIEW
 // ═══════════════════════════════════════════════════
-function DashboardView({tasks,moods,onToggle,onAdd,onAlert,onFocusTask,loading}) {
+function DashboardView({tasks,moods,onToggle,onAdd,onDelete,onAlert,onFocusTask,loading})  {
   const [modal,setModal]=useState(false);
   const [filter,setFilter]=useState("all");
   const [search,setSearch]=useState("");
@@ -800,8 +805,11 @@ function DashboardView({tasks,moods,onToggle,onAdd,onAlert,onFocusTask,loading})
   
   const filtered=tasks
     .filter(t=>filter==="all"||t.cat===filter||t.p===filter)
-    .filter(t=>!search||t.title.toLowerCase().includes(search.toLowerCase()));
-
+    .filter(t=>!search||t.title.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (a.done === b.done) return 0;
+      return a.done ? 1 : -1;
+    });
   return (
     <div className="p-6 pb-10 max-w-5xl mx-auto">
       <div className="pt-4 mb-8">
@@ -835,7 +843,7 @@ function DashboardView({tasks,moods,onToggle,onAdd,onAlert,onFocusTask,loading})
             {filtered.map(t=>(
               <div key={t.id} className="relative pl-6">
                 <div className="absolute -left-[23px] top-6 w-4 h-4 rounded-full bg-white border-[3px] border-[#2D9E6B] shadow-sm z-10" />
-                <TaskCard task={t} onToggle={onToggle} onFocus={onFocusTask}/>
+                <TaskCard task={t} onToggle={onToggle} onFocus={onFocusTask} onDelete={onDelete}/>
               </div>
             ))}
             {filtered.length === 0 && (
@@ -860,7 +868,7 @@ function DashboardView({tasks,moods,onToggle,onAdd,onAlert,onFocusTask,loading})
 // ═══════════════════════════════════════════════════
 //  CALENDAR VIEW & WARNING VIEW
 // ═══════════════════════════════════════════════════
-function CalendarView({ tasks, selectedDate, onToggle, onFocusTask, loading }) {
+function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, loading })  {
   const H = { fontFamily: "'Lora', serif" };
   if (loading) return <SkeletonScreen />;
 
@@ -884,8 +892,10 @@ function CalendarView({ tasks, selectedDate, onToggle, onFocusTask, loading }) {
   // LEWA STRONA: Zadania na oś czasu (Kłódka na dziś LUB Deadline na dziś)
   const timelineTasks = tasks.filter(t => isSameDate(t.t) || (!t.isLocked && isSameDate(t.deadline)));
   
-  // PRAWA STRONA: Cała kolejka zadań (Wszystko co nie ma kłódki, od najważniejszych)
-  const queueTasks = tasks.filter(t => !t.done && !t.isLocked).sort((a, b) => {
+  
+  // PRAWA STRONA: Cała kolejka zadań (Zrobione na dole, reszta po priorytecie)
+  const queueTasks = tasks.filter(t => !t.isLocked).sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
     const pMap = { wysoki: 1, sredni: 2, niski: 3 };
     return pMap[a.p] - pMap[b.p];
   });
@@ -962,14 +972,25 @@ function CalendarView({ tasks, selectedDate, onToggle, onFocusTask, loading }) {
                   {deadlineToday && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg border border-red-100">Dziś deadline!</span>}
                   {!deadlineToday && t.deadline && <span className="text-[10px] font-bold text-[#5A7368] bg-[#F5EFE6] px-2 py-1 rounded-lg">Deadline: {t.deadline.split(' o ')[0]}</span>}
                 </div>
-                <h4 className="text-sm font-bold text-[#1A2F22] mb-3">{t.title}</h4>
+                <h4 className={`text-sm font-bold mb-3 ${t.done ? 'line-through text-[#5A7368]' : 'text-[#1A2F22]'}`}>{t.title}</h4>
                 <div className="flex items-center gap-3">
                   <span className="text-[10px] font-bold text-[#5A7368] flex items-center gap-1 bg-[#F5EFE6] px-2 py-1 rounded-md">
                     <Clock size={12}/> {t.duration || "Brak info"}
                   </span>
-                  <button onClick={() => onFocusTask(t)} title="Włącz Tryb Skupienia" className="ml-auto w-9 h-9 rounded-full bg-[#1E5C36] text-white flex items-center justify-center hover:scale-110 shadow-md transition-all">
-                    <Play size={14} className="ml-0.5"/>
-                  </button>
+                  
+                  <div className="ml-auto flex gap-2">
+                    <button onClick={() => onToggle(t.id)} title={t.done ? "Cofnij wykonanie" : "Zaznacz jako zrobione"} className={`w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 shadow-md transition-all ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}>
+                      <Check size={14} className="ml-0.5"/>
+                    </button>
+                    {!t.done && (
+                      <button onClick={() => onFocusTask(t)} title="Włącz Tryb Skupienia" className="w-9 h-9 rounded-full bg-[#1E5C36] text-white flex items-center justify-center hover:scale-110 shadow-md transition-all">
+                        <Play size={14} className="ml-0.5"/>
+                      </button>
+                    )}
+                    <button onClick={() => onDelete(t.id)} title="Usuń zadanie" className="w-9 h-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center hover:scale-110 shadow-md transition-all opacity-0 group-hover:opacity-100">
+                      <Trash2 size={14}/>
+                    </button>
+                  </div>
                 </div>
               </div>
             )
@@ -1080,9 +1101,14 @@ export default function App() {
     setTasks(prevTasks => prevTasks.map(t => t.id === id ? {...t, done: !t.done} : t));
   };
   
-  const addTask = (t) => {
+const addTask = (t) => {
     setTasks(p => [{...t, id: Date.now(), done: false}, ...p]);
     add("Zadanie dodane pomyślnie!");
+  };
+
+  const deleteTask = (id) => {
+    setTasks(p => p.filter(t => t.id !== id));
+    add("Zadanie usunięte.");
   };
 
   const addMood = (m) => {
@@ -1121,10 +1147,11 @@ export default function App() {
             <div className="max-w-4xl mx-auto">
               {activeTab === "dashboard" && (
                 <DashboardView 
-                  tasks={tasks}
-                  moods={moods}
-                  onToggle={toggleTask}
-                  onAdd={addTask}
+                tasks={tasks}
+                 moods={moods} 
+                 onToggle={toggleTask} 
+                 onAdd={addTask} 
+                 onDelete={deleteTask}
                   onFocusTask={setFocusedTask}
                   onAlert={() => {
                     add("Wykryto sygnał ostrzegawczy. Przejdź do Systemu Ostrzegania.", "warn");
@@ -1135,9 +1162,10 @@ export default function App() {
               )}
               {activeTab === "calendar" && (
   <CalendarView 
-    tasks={tasks} 
-    selectedDate={selectedDate} 
-    onToggle={toggleTask} 
+  tasks={tasks} 
+  selectedDate={selectedDate} 
+  onToggle={toggleTask} 
+  onDelete={deleteTask}
     onFocusTask={setFocusedTask}
     loading={isLoading} 
   />
