@@ -384,11 +384,28 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
         </div>
       )}
 
-      <div className="px-4 py-4 border-t border-[#E8DDD0]">
-        <button onClick={() => setMenu(!menu)} className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-[#F5EFE6] transition-all relative">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2D9E6B] to-[#1E5C36] flex items-center justify-center text-white font-bold">{user?.name?.charAt(0)}</div>
-          {!collapsed && <span className="text-sm font-bold text-[#1A2F22] truncate">{user?.name}</span>}
+      <div className="px-4 py-4 border-t border-[#E8DDD0] relative">
+        <button onClick={() => setMenu(!menu)} className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-[#F5EFE6] transition-all">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2D9E6B] to-[#1E5C36] flex items-center justify-center text-white font-bold flex-shrink-0">
+            {user?.name?.charAt(0) || "U"}
+          </div>
+          {!collapsed && <span className="text-sm font-bold text-[#1A2F22] truncate">{user?.name || "Użytkownik"}</span>}
         </button>
+
+        {/* NAPRAWIONE MENU WYLOGOWANIA */}
+        {menu && (
+          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-2xl shadow-2xl border border-[#E8DDD0] py-2 z-50 animate-in fade-in slide-in-from-bottom-2">
+            <button 
+              onClick={() => {
+                localStorage.clear(); // Całkowicie czyści pamięć
+                window.location.reload(); // Odświeża stronę (przenosi do Landing Page)
+              }} 
+              className="w-full px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-all rounded-xl"
+            >
+              <LogOut size={16}/> Wyloguj mnie
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
