@@ -308,55 +308,91 @@ function Onboarding({onComplete}) {
 // ═══════════════════════════════════════════════════
 //  APP: SIDEBAR / LAYOUT
 // ═══════════════════════════════════════════════════
-function Sidebar({active,onNav,user,onLogout,collapsed,setCollapsed}) {
-  const [menu,setMenu]=useState(false);
-  const NAV=[
-    {id:"dashboard",icon:<Home size={18}/>,label:"Strona główna"},
-    {id:"calendar", icon:<Calendar size={18}/>,label:"Kalendarz"},
-    {id:"mood",     icon:<Smile size={18}/>,label:"Monitor nastroju"},
-    {id:"warning",  icon:<AlertTriangle size={18}/>,label:"System ostrzegania"},
+function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selectedDate, setSelectedDate }) {
+  const [menu, setMenu] = useState(false);
+  const H = { fontFamily: "'Lora', serif" };
+  
+  // Logika generowania dni w mini-kalendarzu
+  const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+  const daysInMonth = [];
+  for (let i = 1; i <= endOfMonth.getDate(); i++) {
+    daysInMonth.push(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i));
+  }
+
+  const changeMonth = (offset) => {
+    setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + offset, 1));
+  };
+
+  const navItems = [
+    { id: "dashboard", icon: <Home size={18} />, label: "Strona główna" },
+    { id: "calendar", icon: <Calendar size={18} />, label: "Kalendarz" },
+    { id: "mood", icon: <Smile size={18} />, label: "Monitor nastroju" },
+    { id: "warning", icon: <AlertTriangle size={18} />, label: "System ostrzegania" },
   ];
-  const H={fontFamily:"'Lora',serif"};
+
   return (
-    <aside className={`${collapsed?"w-16":"w-56"} flex-shrink-0 bg-white border-r border-[#E8DDD0] flex flex-col transition-all duration-300 h-full sticky top-0`}>
-      <div className={`px-4 py-4 border-b border-[#E8DDD0] flex items-center ${collapsed?"justify-center":"justify-between"}`}>
-        {!collapsed&&<span style={H} className="text-[#1E5C36] font-bold text-base">Wellbeing app</span>}
-        <button onClick={()=>setCollapsed(!collapsed)} className="w-8 h-8 rounded-xl hover:bg-[#F5EFE6] flex items-center justify-center text-[#5A7368] transition-all">
-          <Menu size={16}/>
+    <aside className={`${collapsed ? "w-20" : "w-72"} flex-shrink-0 bg-white border-r border-[#E8DDD0] flex flex-col transition-all duration-300 h-screen sticky top-0 z-50`}>
+      <div className={`px-6 py-6 border-b border-[#E8DDD0] flex items-center ${collapsed ? "justify-center" : "justify-between"}`}>
+        {!collapsed && <span style={H} className="text-[#1E5C36] font-bold text-xl tracking-tight">Wellbeing app</span>}
+        <button onClick={() => setCollapsed(!collapsed)} className="p-2 hover:bg-[#F5EFE6] rounded-xl text-[#5A7368] transition-all">
+          <Menu size={20} />
         </button>
       </div>
-      <nav className="flex-1 px-2 py-3 space-y-0.5">
-        {NAV.map(n=>(
-          <button key={n.id} onClick={()=>onNav(n.id)} title={n.label} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-medium transition-all duration-150 ${active===n.id?"bg-[#1E5C36] text-white shadow-md shadow-green-900/20":"text-[#5A7368] hover:bg-[#F5EFE6] hover:text-[#1E5C36]"}`}>
+
+      <nav className="px-3 py-4 space-y-1">
+        {navItems.map(n => (
+          <button key={n.id} onClick={() => onNav(n.id)} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${active === n.id ? "bg-[#1E5C36] text-white shadow-lg shadow-green-900/20" : "text-[#5A7368] hover:bg-[#F5EFE6]"}`}>
             <span className="flex-shrink-0">{n.icon}</span>
-            {!collapsed&&<span className="truncate">{n.label}</span>}
+            {!collapsed && <span>{n.label}</span>}
           </button>
         ))}
       </nav>
-      <div className="px-2 pb-3 border-t border-[#E8DDD0] pt-2 relative">
-        <button onClick={()=>setMenu(p=>!p)} className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl hover:bg-[#F5EFE6] transition-all ${collapsed?"justify-center":""}`}>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2D9E6B] to-[#1E5C36] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            {user?.name?.charAt(0)?.toUpperCase()||"U"}
-          </div>
-          {!collapsed&&<>
-            <span className="text-xs font-semibold text-[#1A2F22] truncate flex-1 text-left">{user?.name||"Użytkownik"}</span>
-            <ChevronDown size={12} className="text-[#9FB5AD] flex-shrink-0"/>
-          </>}
-        </button>
-        {menu&&(
-          <div className="absolute bottom-full left-2 right-2 mb-1 bg-white rounded-2xl shadow-2xl border border-[#E8DDD0] py-1 z-50">
-            <div className="border-t border-[#E8DDD0] mt-1 pt-1">
-              <button onClick={onLogout} className="w-full px-4 py-2.5 text-xs text-red-500 hover:bg-red-50 text-left flex items-center gap-2">
-                <LogOut size={12}/>Wyloguj się
-              </button>
+
+      <div className="flex-1" />
+
+      {/* MINI KALENDARZ W LEWYM DOLNYM ROGU */}
+      {!collapsed && (
+        <div className="px-6 py-6 border-t border-[#E8DDD0] bg-[#FAFAFA]">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#1E5C36]">
+              {selectedDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' })}
+            </span>
+            <div className="flex gap-1">
+              <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-[#E8DDD0] rounded-md"><ChevronLeft size={14}/></button>
+              <button onClick={() => changeMonth(1)} className="p-1 hover:bg-[#E8DDD0] rounded-md"><ChevronRight size={14}/></button>
             </div>
           </div>
-        )}
+          <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-[#9FB5AD] mb-2">
+            {['P', 'W', 'Ś', 'C', 'P', 'S', 'N'].map(d => <div key={d}>{d}</div>)}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {daysInMonth.map((date, idx) => {
+              const isToday = date.toDateString() === new Date().toDateString();
+              const isSelected = date.toDateString() === selectedDate.toDateString();
+              return (
+                <button 
+                  key={idx}
+                  onClick={() => { setSelectedDate(date); onNav("calendar"); }}
+                  className={`aspect-square flex items-center justify-center rounded-lg text-[10px] font-bold transition-all ${isSelected ? "bg-[#1E5C36] text-white" : isToday ? "text-[#1E5C36] border border-[#1E5C36]" : "text-[#5A7368] hover:bg-[#E8DDD0]"}`}
+                >
+                  {date.getDate()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="px-4 py-4 border-t border-[#E8DDD0]">
+        <button onClick={() => setMenu(!menu)} className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-[#F5EFE6] transition-all relative">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2D9E6B] to-[#1E5C36] flex items-center justify-center text-white font-bold">{user?.name?.charAt(0)}</div>
+          {!collapsed && <span className="text-sm font-bold text-[#1A2F22] truncate">{user?.name}</span>}
+        </button>
       </div>
     </aside>
   );
 }
-
 // ═══════════════════════════════════════════════════
 //  FOCUS MODE & TASK CARD
 // ═══════════════════════════════════════════════════
@@ -787,29 +823,111 @@ function DashboardView({tasks,moods,onToggle,onAdd,onAlert,onFocusTask,loading})
 // ═══════════════════════════════════════════════════
 //  CALENDAR VIEW & WARNING VIEW
 // ═══════════════════════════════════════════════════
-function CalendarView({moods, loading}) {
-  const H={fontFamily:"'Lora',serif"};
-  if(loading) return <SkeletonScreen/>;
+function CalendarView({ tasks, selectedDate, onToggle, onFocusTask, loading }) {
+  const H = { fontFamily: "'Lora', serif" };
+  if (loading) return <SkeletonScreen />;
+
+  const hours = Array.from({ length: 16 }, (_, i) => i + 7); // Oś czasu od 07:00 do 22:00
+
+  // POTĘŻNY SKANER DAT: Rozpoznaje datę niezależnie od formatu tekstu
+  const isSameDate = (textString) => {
+    if (!textString) return false;
+    const selYear = selectedDate.getFullYear();
+    const selMonth = selectedDate.getMonth() + 1;
+    const selDay = selectedDate.getDate();
+
+    // Szuka formatu z deadline'u (np. "2026-04-08 o 12:00")
+    const ymd = textString.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (ymd && parseInt(ymd[1]) === selYear && parseInt(ymd[2]) === selMonth && parseInt(ymd[3]) === selDay) return true;
+
+    // Szuka formatu z "Kłódki" (np. "🔒 09:00 (08.04.2026)")
+    const dmy = textString.match(/(\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})/);
+    if (dmy && parseInt(dmy[3]) === selYear && parseInt(dmy[2]) === selMonth && parseInt(dmy[1]) === selDay) return true;
+
+    return false;
+  };
+
+  // Filtrowanie z użyciem nowego skanera
+  const dayTasks = tasks.filter(t => isSameDate(t.t));
+  const deadlineTasks = tasks.filter(t => !t.done && isSameDate(t.deadline)).sort((a, b) => {
+    const pMap = { wysoki: 1, sredni: 2, niski: 3 };
+    return pMap[a.p] - pMap[b.p];
+  });
+
   return (
-    <div className="p-6 pb-10">
-      <div className="pt-8 mb-8">
-        <h1 style={H} className="text-2xl font-bold text-[#1A2F22] mb-1">Kalendarz i analityka</h1>
+    <div className="flex h-screen bg-white">
+      {/* LEWA STRONA: OŚ CZASU */}
+      <div className="flex-1 overflow-y-auto p-8 border-r border-[#E8DDD0] pb-24">
+        <header className="mb-10">
+          <h1 style={H} className="text-3xl font-bold text-[#1A2F22] capitalize">
+            {selectedDate.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </h1>
+          <p className="text-[#5A7368] text-sm mt-1">Masz {dayTasks.length} zablokowanych terminów na ten dzień.</p>
+        </header>
+
+        <div className="relative">
+          {hours.map(h => {
+            // Szukamy, które zadania mają zablokowaną tę konkretną godzinę
+            const tasksInThisHour = dayTasks.filter(t => {
+              const match = t.t ? t.t.match(/(\d{1,2}):\d{2}/) : null;
+              const taskHour = match ? parseInt(match[1]) : t.hour;
+              return taskHour === h;
+            });
+
+            return (
+              <div key={h} className="flex border-t border-[#F5EFE6] min-h-[6rem] group">
+                <div className="w-20 -mt-2.5 text-[11px] font-black text-[#9FB5AD] uppercase tracking-tighter">
+                  {h.toString().padStart(2, '0')}:00
+                </div>
+                {/* Tutaj lądują ładne, zielone bloki zadań na siatce */}
+                <div className="flex-1 relative flex flex-wrap gap-2 py-2 pr-2">
+                  {tasksInThisHour.map(t => (
+                    <div key={t.id} className="w-full bg-[#E8F4ED] border-l-4 border-[#2D9E6B] rounded-xl p-3 shadow-sm hover:shadow-md transition-all">
+                      <p className="text-sm font-bold text-[#1E5C36] truncate">{t.title}</p>
+                      <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-wider mt-1">{t.duration || "Zablokowany czas"}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <div className="bg-white rounded-3xl border border-[#E8DDD0] p-6 mb-6">
-        <h3 className="text-sm font-bold text-[#1A2F22] mb-4">Historia nastroju</h3>
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {moods.slice().reverse().map(m=>(
-            <div key={m.id} className="min-w-[70px] flex flex-col items-center p-3 bg-[#F5EFE6] rounded-2xl border border-[#E8DDD0]">
-              <span className="text-xs text-[#9FB5AD] font-semibold mb-2">{m.d.slice(5,10)}</span>
-              <span className="text-2xl">{EMOJIS[m.v]}</span>
+
+      {/* PRAWA STRONA: DEADLINE'Y (Priorytety Dnia) */}
+      <div className="w-96 bg-[#FAFAFA] p-8 overflow-y-auto hidden lg:block pb-24">
+        <h3 style={H} className="text-xl font-bold text-[#1A2F22] mb-6 flex items-center gap-2">
+          <Target size={20} className="text-[#2D9E6B]"/> Priorytety dnia
+        </h3>
+        <div className="space-y-4">
+          {deadlineTasks.map(t => (
+            <div key={t.id} className="bg-white p-5 rounded-[2rem] border border-[#E8DDD0] shadow-sm hover:border-[#2D9E6B] transition-all">
+              <div className="flex justify-between items-start mb-3">
+                <PBadge p={t.p}/>
+                <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg border border-red-100">Dziś deadline!</span>
+              </div>
+              <h4 className="text-sm font-bold text-[#1A2F22] mb-3">{t.title}</h4>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-bold text-[#5A7368] flex items-center gap-1 bg-[#F5EFE6] px-2 py-1 rounded-md">
+                  <Clock size={12}/> {t.duration || "Brak info"}
+                </span>
+                <button onClick={() => onFocusTask(t)} title="Włącz Tryb Skupienia" className="ml-auto w-9 h-9 rounded-full bg-[#1E5C36] text-white flex items-center justify-center hover:scale-110 shadow-md transition-all">
+                  <Play size={14} className="ml-0.5"/>
+                </button>
+              </div>
             </div>
           ))}
+          {deadlineTasks.length === 0 && (
+            <div className="text-center py-20 opacity-70">
+              <div className="w-16 h-16 bg-[#E8DDD0] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✨</div>
+              <p className="text-[10px] font-black text-[#9FB5AD] uppercase tracking-widest">Brak pilnych zadań</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
 function WarningView({loading}) {
   const H={fontFamily:"'Lora',serif"};
   if(loading) return <SkeletonScreen/>;
@@ -862,6 +980,7 @@ export default function App() {
   const [tasks, setTasks] = usePersist("wba_tasks", INIT_TASKS);
   const [moods, setMoods] = usePersist("wba_moods", INIT_MOODS);
   const {ts, add, rm} = useToasts();
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     if(view === "landing" && user) setView("app");
@@ -936,6 +1055,8 @@ export default function App() {
             onLogout={() => {setUser(null); setView("landing");}}
             collapsed={isSidebarCollapsed}
             setCollapsed={setSidebarCollapsed}
+            selectedDate={selectedDate} // NOWE
+  setSelectedDate={setSelectedDate} // NOWE
           />
           <main className="flex-1 overflow-y-auto relative bg-[#FAFAFA]">
             <div className="max-w-4xl mx-auto">
@@ -953,7 +1074,15 @@ export default function App() {
                   loading={isLoading}
                 />
               )}
-              {activeTab === "calendar" && <CalendarView moods={moods} loading={isLoading} />}
+              {activeTab === "calendar" && (
+  <CalendarView 
+    tasks={tasks} 
+    selectedDate={selectedDate} 
+    onToggle={toggleTask} 
+    onFocusTask={setFocusedTask}
+    loading={isLoading} 
+  />
+)}
               {activeTab === "warning" && <WarningView loading={isLoading} />}
             </div>
           </main>
