@@ -38,10 +38,30 @@ const EMOJIS = ["😫","😟","😐","😊","😄"];
 const MOOD_L = ["Bardzo źle","Źle","Neutralnie","Dobrze","Świetnie"];
 const DAYS   = ["Pon","Wt","Śr","Czw","Pt","Sb","Ndz"];
 
+// Dynamiczne generowanie dat dla zadań startowych
+const dzisiaj = new Date();
+const dzisiajYMD = dzisiaj.toISOString().split("T")[0]; // Format: 2026-03-31
+
+const za3Dni = new Date();
+za3Dni.setDate(dzisiaj.getDate() + 3);
+const za3DniPL = za3Dni.toLocaleDateString("pl-PL"); // Format: 03.04.2026
+
 const INIT_TASKS = [
-  { id:1, title:"Spotkanie zespołowe",  cat:"praca", w:8, p:"wysoki", done:false, t:"08:00–10:00",  desc:"Omówienie materiałów", hour:8  },
-  { id:2, title:"Praca nad raportem A", cat:"praca", w:6, p:"sredni", done:true,  t:"10:00–11:00", desc:"Dokończenie wniosków", hour:10 },
-  { id:3, title:"Code review",          cat:"praca", w:10, p:"niski",  done:false, t:"11:40–12:40", desc:"", hour:11 },
+  { 
+    id: 1, title: "Raport strategiczny", cat: "praca", w: 8, p: "wysoki", done: false, 
+    duration: "120 min", deadline: `${dzisiajYMD} o 14:00`, difficulty: 4, 
+    desc: "Przejrzeć dane z kwartału", isLocked: false 
+  },
+  { 
+    id: 2, title: "Spotkanie z klientem", cat: "praca", w: 6, p: "sredni", done: false, 
+    t: `🔒 10:00 (${za3DniPL})`, duration: "60 min", hour: 10, deadline: "", difficulty: 3, 
+    desc: "Omówienie warunków umowy", isLocked: true 
+  },
+  { 
+    id: 3, title: "Odpisanie na maile", cat: "praca", w: 4, p: "niski", done: false, 
+    duration: "30 min", deadline: `${dzisiajYMD} o 16:00`, difficulty: 2, 
+    desc: "Inbox zero", isLocked: false 
+  },
 ];
 const INIT_MOODS = [
   {id:1,d:"2025-10-13",v:2},{id:2,d:"2025-10-14",v:3},
@@ -844,25 +864,232 @@ function CalendarView({ tasks, selectedDate, onToggle, onFocusTask, loading }) {
   const H = { fontFamily: "'Lora', serif" };
   if (loading) return <SkeletonScreen />;
 
-  const hours = Array.from({ length: 16 }, (_, i) => i + 7); // Oś czasu od 07:00 do 22:00
+  const hours = Array.from({ length: 16 }, (_, i) => i + 7); // Od 07:00 do 22:00
 
-  // POTĘŻNY SKANER DAT: Rozpoznaje datę niezależnie od formatu tekstu
   const isSameDate = (textString) => {
     if (!textString) return false;
     const selYear = selectedDate.getFullYear();
     const selMonth = selectedDate.getMonth() + 1;
     const selDay = selectedDate.getDate();
 
-    // Szuka formatu z deadline'u (np. "2026-04-08 o 12:00")
     const ymd = textString.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
     if (ymd && parseInt(ymd[1]) === selYear && parseInt(ymd[2]) === selMonth && parseInt(ymd[3]) === selDay) return true;
 
-    // Szuka formatu z "Kłódki" (np. "🔒 09:00 (08.04.2026)")
     const dmy = textString.match(/(\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})/);
     if (dmy && parseInt(dmy[3]) === selYear && parseInt(dmy[2]) === selMonth && parseInt(dmy[1]) === selDay) return true;
 
     return false;
   };
+
+  // LEWA STRONA: Zadania na oś czasu (Kłódka na dziś LUB Deadline na dziś)
+  const timelineTasks = tasks.filter(t => isSameDate(t.t) || (!t.isLocked && isSameDate(t.deadline)));
+  
+  // PRAWA STRONA: Cała kolejka zadań (Wszystko co nie ma kłódki, od najważniejszych)
+  const queueTasks = tasks.filter(t => !t.done && !t.isLocked).sort((a, b) => {
+    const pMap = { wysoki: 1, sredni: 2, niski: 3 };
+    return pMap[a.p] - pMap[b.p];
+  });
+
+  return (
+    <div className="flex h-screen bg-white">
+      {/* LEWA STRONA: OŚ CZASU */}
+      <div className="flex-1 overflow-y-auto p-8 border-r border-[#E8DDD0] pb-24">
+        <header className="mb-10">
+          <h1 style={H} className="text-3xl font-bold text-[#1A2F22] capitalize">
+            {selectedDate.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </h1>
+          <p className="text-[#5A7368] text-sm mt-1">Siatka godzinowa: Twoje zablokowane terminy i ostateczne deadline'y.</p>
+        </header>
+
+        <div className="relative">
+          {hours.map(h => {
+            // Szukamy zadań na tę konkretną godzinę
+            const tasksInThisHour = timelineTasks.filter(t => {
+              let taskHour = -1;
+              if (isSameDate(t.t)) { // Z kłódką
+                const match = t.t ? t.t.match(/(\d{1,2}):\d{2}/) : null;
+                taskHour = match ? parseInt(match[1]) : t.hour;
+              } else if (isSameDate(t.deadline)) { // Z deadlinem
+                const match = t.deadline.match(/o (\d{1,2}):\d{2}/);
+                if (match) taskHour = parseInt(match[1]);
+              }
+              return taskHour === h;
+            });
+
+            return (
+              <div key={h} className="flex border-t border-[#F5EFE6] min-h-[6rem] group">
+                <div className="w-20 -mt-2.5 text-[11px] font-black text-[#9FB5AD] uppercase tracking-tighter">
+                  {h.toString().padStart(2, '0')}:00
+                </div>
+                <div className="flex-1 relative flex flex-col gap-2 py-2 pr-2">
+                  {tasksInThisHour.map(t => {
+                    const isDeadlineBlock = !isSameDate(t.t) && isSameDate(t.deadline);
+                    return (
+                      <div key={t.id} className={`w-full border-l-4 rounded-xl p-3 shadow-sm hover:shadow-md transition-all ${isDeadlineBlock ? 'bg-red-50 border-red-400' : 'bg-[#E8F4ED] border-[#2D9E6B]'}`}>
+                        <div className="flex justify-between items-start mb-1">
+                           <p className={`text-sm font-bold truncate ${isDeadlineBlock ? 'text-red-700' : 'text-[#1E5C36]'}`}>{t.title}</p>
+                           {isDeadlineBlock ? (
+                             <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">⚠️ Deadline</span>
+                           ) : (
+                             <span className="text-[9px] font-black text-[#2D9E6B] uppercase tracking-widest">🔒 Zablokowane</span>
+                           )}
+                        </div>
+                        <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${isDeadlineBlock ? 'text-red-600/70' : 'text-[#5A7368]'}`}>
+                          {t.duration || "Brak info o czasie"}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* PRAWA STRONA: KOLEJKA ZADAŃ (Backlog) */}
+      <div className="w-96 bg-[#FAFAFA] p-8 overflow-y-auto hidden lg:block pb-24">
+        <h3 style={H} className="text-xl font-bold text-[#1A2F22] mb-6 flex items-center gap-2">
+          <Target size={20} className="text-[#2D9E6B]"/> Do zrobienia
+        </h3>
+        <div className="space-y-4">
+          {queueTasks.map(t => {
+            const deadlineToday = isSameDate(t.deadline);
+            return (
+              <div key={t.id} className={`bg-white p-5 rounded-[2rem] border shadow-sm transition-all ${deadlineToday ? 'border-red-200 hover:border-red-400' : 'border-[#E8DDD0] hover:border-[#2D9E6B]'}`}>
+                <div className="flex justify-between items-start mb-3">
+                  <PBadge p={t.p}/>
+                  {deadlineToday && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg border border-red-100">Dziś deadline!</span>}
+                  {!deadlineToday && t.deadline && <span className="text-[10px] font-bold text-[#5A7368] bg-[#F5EFE6] px-2 py-1 rounded-lg">Deadline: {t.deadline.split(' o ')[0]}</span>}
+                </div>
+                <h4 className="text-sm font-bold text-[#1A2F22] mb-3">{t.title}</h4>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-[#5A7368] flex items-center gap-1 bg-[#F5EFE6] px-2 py-1 rounded-md">
+                    <Clock size={12}/> {t.duration || "Brak info"}
+                  </span>
+                  <button onClick={() => onFocusTask(t)} title="Włącz Tryb Skupienia" className="ml-auto w-9 h-9 rounded-full bg-[#1E5C36] text-white flex items-center justify-center hover:scale-110 shadow-md transition-all">
+                    <Play size={14} className="ml-0.5"/>
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+          {queueTasks.length === 0 && (
+            <div className="text-center py-20 opacity-70">
+              <div className="w-16 h-16 bg-[#E8DDD0] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✨</div>
+              <p className="text-[10px] font-black text-[#9FB5AD] uppercase tracking-widest">Wszystko zrobione!</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  // LEWA STRONA: Zadania na oś czasu (Kłódka na dziś LUB Deadline na dziś)
+  const timelineTasks = tasks.filter(t => isSameDate(t.t) || (!t.isLocked && isSameDate(t.deadline)));
+  
+  // PRAWA STRONA: Cała kolejka zadań (Wszystko co nie ma kłódki, od najważniejszych)
+  const queueTasks = tasks.filter(t => !t.done && !t.isLocked).sort((a, b) => {
+    const pMap = { wysoki: 1, sredni: 2, niski: 3 };
+    return pMap[a.p] - pMap[b.p];
+  });
+
+  return (
+    <div className="flex h-screen bg-white">
+      {/* LEWA STRONA: OŚ CZASU */}
+      <div className="flex-1 overflow-y-auto p-8 border-r border-[#E8DDD0] pb-24">
+        <header className="mb-10">
+          <h1 style={H} className="text-3xl font-bold text-[#1A2F22] capitalize">
+            {selectedDate.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </h1>
+          <p className="text-[#5A7368] text-sm mt-1">Siatka godzinowa: Twoje zablokowane terminy i ostateczne deadline'y.</p>
+        </header>
+
+        <div className="relative">
+          {hours.map(h => {
+            // Szukamy zadań na tę konkretną godzinę
+            const tasksInThisHour = timelineTasks.filter(t => {
+              let taskHour = -1;
+              if (isSameDate(t.t)) { // Z kłódką
+                const match = t.t ? t.t.match(/(\d{1,2}):\d{2}/) : null;
+                taskHour = match ? parseInt(match[1]) : t.hour;
+              } else if (isSameDate(t.deadline)) { // Z deadlinem
+                const match = t.deadline.match(/o (\d{1,2}):\d{2}/);
+                if (match) taskHour = parseInt(match[1]);
+              }
+              return taskHour === h;
+            });
+
+            return (
+              <div key={h} className="flex border-t border-[#F5EFE6] min-h-[6rem] group">
+                <div className="w-20 -mt-2.5 text-[11px] font-black text-[#9FB5AD] uppercase tracking-tighter">
+                  {h.toString().padStart(2, '0')}:00
+                </div>
+                <div className="flex-1 relative flex flex-col gap-2 py-2 pr-2">
+                  {tasksInThisHour.map(t => {
+                    const isDeadlineBlock = !isSameDate(t.t) && isSameDate(t.deadline);
+                    return (
+                      <div key={t.id} className={`w-full border-l-4 rounded-xl p-3 shadow-sm hover:shadow-md transition-all ${isDeadlineBlock ? 'bg-red-50 border-red-400' : 'bg-[#E8F4ED] border-[#2D9E6B]'}`}>
+                        <div className="flex justify-between items-start mb-1">
+                           <p className={`text-sm font-bold truncate ${isDeadlineBlock ? 'text-red-700' : 'text-[#1E5C36]'}`}>{t.title}</p>
+                           {isDeadlineBlock ? (
+                             <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">⚠️ Deadline</span>
+                           ) : (
+                             <span className="text-[9px] font-black text-[#2D9E6B] uppercase tracking-widest">🔒 Zablokowane</span>
+                           )}
+                        </div>
+                        <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${isDeadlineBlock ? 'text-red-600/70' : 'text-[#5A7368]'}`}>
+                          {t.duration || "Brak info o czasie"}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* PRAWA STRONA: KOLEJKA ZADAŃ (Backlog) */}
+      <div className="w-96 bg-[#FAFAFA] p-8 overflow-y-auto hidden lg:block pb-24">
+        <h3 style={H} className="text-xl font-bold text-[#1A2F22] mb-6 flex items-center gap-2">
+          <Target size={20} className="text-[#2D9E6B]"/> Do zrobienia
+        </h3>
+        <div className="space-y-4">
+          {queueTasks.map(t => {
+            const deadlineToday = isSameDate(t.deadline);
+            return (
+              <div key={t.id} className={`bg-white p-5 rounded-[2rem] border shadow-sm transition-all ${deadlineToday ? 'border-red-200 hover:border-red-400' : 'border-[#E8DDD0] hover:border-[#2D9E6B]'}`}>
+                <div className="flex justify-between items-start mb-3">
+                  <PBadge p={t.p}/>
+                  {deadlineToday && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg border border-red-100">Dziś deadline!</span>}
+                  {!deadlineToday && t.deadline && <span className="text-[10px] font-bold text-[#5A7368] bg-[#F5EFE6] px-2 py-1 rounded-lg">Deadline: {t.deadline.split(' o ')[0]}</span>}
+                </div>
+                <h4 className="text-sm font-bold text-[#1A2F22] mb-3">{t.title}</h4>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-[#5A7368] flex items-center gap-1 bg-[#F5EFE6] px-2 py-1 rounded-md">
+                    <Clock size={12}/> {t.duration || "Brak info"}
+                  </span>
+                  <button onClick={() => onFocusTask(t)} title="Włącz Tryb Skupienia" className="ml-auto w-9 h-9 rounded-full bg-[#1E5C36] text-white flex items-center justify-center hover:scale-110 shadow-md transition-all">
+                    <Play size={14} className="ml-0.5"/>
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+          {queueTasks.length === 0 && (
+            <div className="text-center py-20 opacity-70">
+              <div className="w-16 h-16 bg-[#E8DDD0] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✨</div>
+              <p className="text-[10px] font-black text-[#9FB5AD] uppercase tracking-widest">Wszystko zrobione!</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
   // Filtrowanie z użyciem nowego skanera
   const dayTasks = tasks.filter(t => isSameDate(t.t));
