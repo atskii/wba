@@ -543,7 +543,8 @@ function TaskModal({onClose, onAdd}) {
   const [isLocked, setIsLocked] = useState(false);
   const [showLockPanel, setShowLockPanel] = useState(false);
   const [lockDateTime, setLockDateTime] = useState("");
-  const [recurrence, setRecurrence] = useState("jednorazowo");
+  const [recurrence, setRecurrence]=useState("jednorazowo");
+  const [recurrenceEnd, setRecurrenceEnd]=useState("");
   
   const submit = () => {
     if(!title) return;
@@ -558,7 +559,20 @@ function TaskModal({onClose, onAdd}) {
       const timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
       const dateStr = d.toLocaleDateString();
       timeString = `🔒 ${timeStr} (${dateStr})`;
-      if(recurrence !== "jednorazowo") timeString += ` 🔁 ${recurrence}`;
+      
+      if (recurrence !== "jednorazowo") {
+        if (recurrence === "co tydzień") {
+          const dayOfWeek = d.getDay() === 0 ? 6 : d.getDay() - 1; 
+          const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
+          timeString += ` 🔁 co tydzień ${daysArr[dayOfWeek]}`;
+        } else {
+          timeString += ` 🔁 ${recurrence}`;
+        }
+        
+        if (recurrenceEnd) {
+          timeString += ` 🛑 do ${recurrenceEnd}`;
+        }
+      }
     }
 
     onAdd({
@@ -566,7 +580,7 @@ function TaskModal({onClose, onAdd}) {
       p, 
       cat: "praca", 
       w: weight,
-      t: timeString, // Przekazujemy ładnie sformatowany tekst kłódki
+      t: timeString, 
       duration: duration ? `${duration} min` : "",
       deadline: deadline ? deadline.replace("T", " o ") : "",
       difficulty,
@@ -654,7 +668,7 @@ function TaskModal({onClose, onAdd}) {
                     <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Dokładna data i godzina</label>
                     <input type="datetime-local" value={lockDateTime} onChange={e=>setLockDateTime(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B]"/>
                   </div>
-                  <div>
+                 <div>
                     <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Cykliczność (Google Style)</label>
                     <select value={recurrence} onChange={e=>setRecurrence(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B] bg-white cursor-pointer">
                       <option value="jednorazowo">Tylko raz</option>
@@ -663,7 +677,13 @@ function TaskModal({onClose, onAdd}) {
                       <option value="co tydzień">Co tydzień</option>
                     </select>
                   </div>
-                  <button 
+                  {recurrence !== "jednorazowo" && (
+                    <div>
+                      <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Zakończ cykl (opcjonalnie)</label>
+                      <input type="date" value={recurrenceEnd} onChange={e=>setRecurrenceEnd(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B] bg-white"/>
+                    </div>
+                  )}
+                  <button
                     onClick={() => { setIsLocked(true); setShowLockPanel(false); }} 
                     className="w-full py-2 bg-[#2D9E6B] text-white rounded-xl font-bold text-xs hover:bg-[#1E5C36] transition-all"
                   >
@@ -874,12 +894,45 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, lo
 
   const hours = Array.from({ length: 16 }, (_, i) => i + 7); // Od 07:00 do 22:00
 
-  const isSameDate = (textString) => {
+const isSameDate = (textString) => {
     if (!textString) return false;
+    const txt = textString.toLowerCase();
+    
     const selYear = selectedDate.getFullYear();
     const selMonth = selectedDate.getMonth() + 1;
     const selDay = selectedDate.getDate();
+    const selDateOnly = new Date(selYear, selectedDate.getMonth(), selDay); 
+    
+    // 1. Sprawdzanie daty KOŃCOWEJ (Czy zadanie już wygasło?)
+    const endMatch = txt.match(/🛑 do (\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (endMatch) {
+        const endDate = new Date(parseInt(endMatch[1]), parseInt(endMatch[2]) - 1, parseInt(endMatch[3]));
+        if (selDateOnly > endDate) return false; // Jesteśmy w kalendarzu poza datą końcową
+    }
 
+    // 2. Sprawdzanie daty POCZĄTKOWEJ dla cykli (Żeby zadanie z jutra nie pokazywało się wczoraj)
+    const startMatch = textString.match(/\((\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})\)/);
+    if (startMatch && (txt.includes("codziennie") || txt.includes("co tydzień") || txt.includes("w dni robocze"))) {
+        const startDate = new Date(parseInt(startMatch[3]), parseInt(startMatch[2]) - 1, parseInt(startMatch[1]));
+        if (selDateOnly < startDate) return false; // Cykl się jeszcze nie zaczął
+    }
+
+    const dayOfWeek = selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1; 
+    const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
+
+    // 3. Opcja: Zadania "codziennie"
+    if (txt.includes("codziennie") || txt.includes("każdego dnia")) return true;
+    
+    // 4. Opcja: W dni robocze
+    if (txt.includes("w dni robocze") && dayOfWeek >= 0 && dayOfWeek <= 4) return true;
+
+    // 5. Opcja: Zadania "co tydzień"
+    if (txt.includes("co tydzień") || txt.includes("co tydzien")) {
+      if (txt.includes(daysArr[dayOfWeek])) return true;
+      if (dayOfWeek === 5 && txt.includes("sb")) return true;
+    }
+
+    // 6. Opcja: Klasyczna, konkretna data (Jednorazowe)
     const ymd = textString.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
     if (ymd && parseInt(ymd[1]) === selYear && parseInt(ymd[2]) === selMonth && parseInt(ymd[3]) === selDay) return true;
 
@@ -926,26 +979,42 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, lo
               return taskHour === h;
             });
 
-            return (
-              <div key={h} className="flex border-t border-[#F5EFE6] min-h-[6rem] group">
-                <div className="w-20 -mt-2.5 text-[11px] font-black text-[#9FB5AD] uppercase tracking-tighter">
-                  {h.toString().padStart(2, '0')}:00
+           return (
+              <div key={h} className="flex border-t border-[#F5EFE6] h-[6rem] group">
+                <div className="w-20 -mt-2.5 text-[11px] font-black text-[#9FB5AD] uppercase tracking-tighter z-10">
+                  <span className="bg-white pr-2">{h.toString().padStart(2, '0')}:00</span>
                 </div>
-                <div className="flex-1 relative flex flex-col gap-2 py-2 pr-2">
-                  {tasksInThisHour.map(t => {
+                <div className="flex-1 relative pr-2">
+                  {tasksInThisHour.map((t, index) => {
                     const isDeadlineBlock = !isSameDate(t.t) && isSameDate(t.deadline);
+                    
+                    // Magia wysokości: wyciągamy liczby z tekstu (np. "120 min")
+                    const match = t.duration ? t.duration.match(/(\d+)/) : null;
+                    const mins = match ? parseInt(match[1]) : 60; // Domyślnie 60 jeśli brak info
+                    const heightRem = (mins / 60) * 6; // 6rem to u nas wysokość jednej godziny
+                    
                     return (
-                      <div key={t.id} className={`w-full border-l-4 rounded-xl p-3 shadow-sm hover:shadow-md transition-all ${isDeadlineBlock ? 'bg-red-50 border-red-400' : 'bg-[#E8F4ED] border-[#2D9E6B]'}`}>
+                      <div 
+                        key={t.id} 
+                        style={{ 
+                          height: `${heightRem}rem`, 
+                          minHeight: '3.5rem', 
+                          zIndex: 10 + index, 
+                          width: `calc(100% - ${index * 1.5}rem)`, 
+                          left: `${index * 1.5}rem` 
+                        }}
+                        className={`absolute top-0 border-l-4 rounded-xl p-3 shadow-md hover:shadow-lg transition-all overflow-hidden ${isDeadlineBlock ? 'bg-red-50/95 border-red-400' : 'bg-[#E8F4ED]/95 border-[#2D9E6B]'}`}
+                      >
                         <div className="flex justify-between items-start mb-1">
                            <p className={`text-sm font-bold truncate ${isDeadlineBlock ? 'text-red-700' : 'text-[#1E5C36]'}`}>{t.title}</p>
                            {isDeadlineBlock ? (
-                             <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">⚠️ Deadline</span>
+                             <span className="text-[9px] font-black text-red-500 uppercase tracking-widest hidden sm:block">⚠️ Deadline</span>
                            ) : (
-                             <span className="text-[9px] font-black text-[#2D9E6B] uppercase tracking-widest">🔒 Zablokowane</span>
+                             <span className="text-[9px] font-black text-[#2D9E6B] uppercase tracking-widest hidden sm:block">🔒 Zablokowane</span>
                            )}
                         </div>
                         <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${isDeadlineBlock ? 'text-red-600/70' : 'text-[#5A7368]'}`}>
-                          {t.duration || "Brak info o czasie"}
+                          {t.duration || "60 min"}
                         </p>
                       </div>
                     );
@@ -1179,4 +1248,3 @@ const addTask = (t) => {
     </div>
   );
 }
-
