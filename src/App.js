@@ -332,9 +332,15 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
   const [menu, setMenu] = useState(false);
   const H = { fontFamily: "'Lora', serif" };
   
-  // Logika generowania dni w mini-kalendarzu
+ // Logika generowania dni w mini-kalendarzu
   const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
   const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+  
+  // Obliczamy przesunięcie dla pierwszego dnia miesiąca (0 = Pon, 6 = Ndz)
+  const firstDayIndex = (startOfMonth.getDay() + 6) % 7; 
+  // Tworzymy tablicę z pustymi elementami do wypełnienia luk w siatce
+  const emptyDays = Array.from({ length: firstDayIndex }, (_, i) => i);
+
   const daysInMonth = [];
   for (let i = 1; i <= endOfMonth.getDate(); i++) {
     daysInMonth.push(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i));
@@ -371,10 +377,10 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
 
       <div className="flex-1" />
 
-      {/* MINI KALENDARZ W LEWYM DOLNYM ROGU */}
+     {/* MINI KALENDARZ W LEWYM DOLNYM ROGU */}
       {!collapsed && (
-        <div className="px-6 py-6 border-t border-[#E8DDD0] bg-[#FAFAFA]">
-          <div className="flex items-center justify-between mb-4">
+        <div className="px-4 py-6 border-t border-[#E8DDD0] bg-[#FAFAFA]">
+          <div className="flex items-center justify-between mb-4 px-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-[#1E5C36]">
               {selectedDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' })}
             </span>
@@ -383,16 +389,22 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
               <button onClick={() => changeMonth(1)} className="p-1 hover:bg-[#E8DDD0] rounded-md"><ChevronRight size={14}/></button>
             </div>
           </div>
-          <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-[#9FB5AD] mb-2">
-            {['P', 'W', 'Ś', 'C', 'P', 'S', 'N'].map(d => <div key={d}>{d}</div>)}
+         <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-[#9FB5AD] mb-2">
+            {['P', 'W', 'Ś', 'C', 'P', 'S', 'N'].map((d, i) => <div key={i}>{d}</div>)}
           </div>
           <div className="grid grid-cols-7 gap-1">
+            {/* Najpierw mapujemy puste divy, aby przesunąć pierwszy dzień pod właściwą literę */}
+            {emptyDays.map((_, idx) => (
+              <div key={`empty-${idx}`} className="aspect-square"></div>
+            ))}
+            
+            {/* Następnie mapujemy właściwe dni */}
             {daysInMonth.map((date, idx) => {
               const isToday = date.toDateString() === new Date().toDateString();
               const isSelected = date.toDateString() === selectedDate.toDateString();
               return (
                 <button 
-                  key={idx}
+                  key={`day-${idx}`}
                   onClick={() => { setSelectedDate(date); onNav("calendar"); }}
                   className={`aspect-square flex items-center justify-center rounded-lg text-[10px] font-bold transition-all ${isSelected ? "bg-[#1E5C36] text-white" : isToday ? "text-[#1E5C36] border border-[#1E5C36]" : "text-[#5A7368] hover:bg-[#E8DDD0]"}`}
                 >
