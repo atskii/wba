@@ -80,6 +80,7 @@ const INIT_TASKS = [
     desc: "Chwila dla siebie przed rozpoczęciem pracy.", isLocked: true, t: `🔒 08:30 (${todayPL}) 🔁 codziennie`
   }
 ];
+
 const INIT_MOODS = [
   {id:1,d:"2025-10-13",v:2},{id:2,d:"2025-10-14",v:3},
 ];
@@ -293,7 +294,9 @@ function Onboarding({onComplete}) {
   const S={fontFamily:"'DM Sans',sans-serif"};
   const H={fontFamily:"'Lora',serif"};
   const OPTS=["Wyjście na słońce","Kilka minut przerwy","Dobra kawa","Krótki spacer","Rozmowa z bliskim","Mała przekąska","Przerwa od pracy","Muzyka","Zmiana otoczenia"];
+  
   const toggle=b=>setPicks(p=>p.includes(b)?p.filter(x=>x!==b):[...p,b]);
+  
   return (
     <div style={S} className="min-h-screen bg-[#F5EFE6] flex flex-col">
       <nav className="bg-white/85 backdrop-blur-xl border-b border-[#E8DDD0] px-6 py-4"><span style={H} className="text-[#1E5C36] font-bold text-xl">Wellbeing app</span></nav>
@@ -332,7 +335,8 @@ function Onboarding({onComplete}) {
               ))}
             </div>
           </>}
-          <button onClick={()=>{if(step<2)setStep(s=>s+1);else onComplete();}} className="w-full py-3.5 mt-6 bg-[#1E5C36] text-white rounded-2xl font-semibold hover:bg-[#164a2c] transition-all shadow-lg">
+          {/* TUTAJ ZMIANA: Przekazujemy tablicę "picks" do funkcji onComplete */}
+          <button onClick={()=>{if(step<2)setStep(s=>s+1);else onComplete(picks);}} className="w-full py-3.5 mt-6 bg-[#1E5C36] text-white rounded-2xl font-semibold hover:bg-[#164a2c] transition-all shadow-lg">
             Kontynuuj
           </button>
         </div>
@@ -340,7 +344,6 @@ function Onboarding({onComplete}) {
     </div>
   );
 }
-
 
 // ═══════════════════════════════════════════════════
 //  APP: SIDEBAR / LAYOUT
@@ -848,13 +851,9 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
   
   if(loading) return <SkeletonScreen/>;
   
-  const filtered=tasks
+ const filtered=tasks
     .filter(t=>filter==="all"||t.cat===filter||t.p===filter)
-    .filter(t=>!search||t.title.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => {
-      if (a.done === b.done) return 0;
-      return a.done ? 1 : -1;
-    });
+    .filter(t=>!search||t.title.toLowerCase().includes(search.toLowerCase()));
   return (
     <div className="p-6 pb-10 max-w-5xl mx-auto">
       <div className="pt-4 mb-8">
@@ -959,11 +958,7 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
 
   const timelineTasks = tasks.filter(t => isSameDate(t.t) || (!t.isLocked && isSameDate(t.deadline)));
   
-  const queueTasks = tasks.filter(t => !t.isLocked).sort((a, b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
-    const pMap = { wysoki: 1, sredni: 2, niski: 3 };
-    return pMap[a.p] - pMap[b.p];
-  });
+ const queueTasks = tasks.filter(t => !t.isLocked);
 
   return (
     <div className="flex h-screen bg-white">
@@ -1158,39 +1153,103 @@ export default function App() {
     setTimeout(() => setIsLoading(false), 800);
   };
 
-  useEffect(() => {
-    if (moods.length > 0) {
-      const lastMood = moods[moods.length - 1].v;
-      if (lastMood <= 1) { 
-        setTasks(prev => {
-          const sorted = [...prev].sort((a, b) => {
-            if (a.done !== b.done) return a.done ? 1 : -1;
-            if (a.w >= 9 && b.w < 9) return 1;
-            if (a.w < 9 && b.w >= 9) return -1;
-            return 0;
-          });
-          const changed = JSON.stringify(prev) !== JSON.stringify(sorted);
-          if(changed) {
-             setTimeout(() => add("Korekta historyczna aktywna. Najtrudniejsze zadania zrzucone na dół.", "info"), 500);
-          }
-          return changed ? sorted : prev;
-        });
+ 
+
+// --- ALGORYTM INTELIGENTNEGO KOLEJKOWANIA (Z TRUDNOŚCIĄ I NASTROJEM) ---
+  const sortSmartQueue = (tasksList) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    // Pobieramy ostatni nastrój użytkownika (domyślnie 2 - neutralny)
+    const lastMood = moods.length > 0 ? moods[moods.length - 1].v : 2; 
+
+    const getScore = (task) => {
+      if (task.done) return -1000;
+      
+      let score = 0;
+      
+      // 1. Priorytet klasyczny
+      if (task.p === "wysoki") score += 30;
+      if (task.p === "sredni") score += 20;
+      if (task.p === "niski") score += 10;
+      
+      // 2. Deadline na dziś
+      if (task.deadline && task.deadline.startsWith(todayStr)) {
+        score += 100;
       }
-    }
-  }, [moods, setTasks, add]);
+      
+      // 3. Quick Wins
+      const match = task.duration ? task.duration.match(/(\d+)/) : null;
+      const mins = match ? parseInt(match[1]) : 60;
+      if (mins <= 30) score += 5;
+
+      // 4. NOWE: Dynamika Trudności i Energii (Difficulty)
+      if (lastMood <= 1) {
+        // Jeśli nastrój jest ZŁY (0-1): Trudne zadania lecą na dół listy
+        score -= (task.difficulty || 0) * 15; 
+      } else {
+        // Jeśli nastrój jest OK (2-4): Trudne zadania idą do góry (Eat That Frog)
+        score += (task.difficulty || 0) * 6; 
+      }
+      
+      return score;
+    };
+
+    return [...tasksList].sort((a, b) => getScore(b) - getScore(a));
+  };
 
   const toggleTask = (id) => {
-    setTasks(prevTasks => prevTasks.map(t => t.id === id ? {...t, done: !t.done} : t));
+    // Sprawdzamy co dokładnie użytkownik właśnie "klika"
+    const taskToToggle = tasks.find(t => t.id === id); 
+    const isCompleting = taskToToggle && !taskToToggle.done;
+    
+    // Sprawdzamy czy to zadanie wysysa dużo energii (trudność 4 lub 5)
+    const isHard = taskToToggle && taskToToggle.difficulty >= 4;
+    
+    // Upewniamy się, czy na liście nie wisi już jakaś przerwa (żeby ich nie dublować)
+    const hasActiveBuffer = tasks.some(t => t.isBuffer && !t.done);
+
+    setTasks(prevTasks => {
+      let updated = prevTasks.map(t => t.id === id ? {...t, done: !t.done} : t);
+      
+      // LOGIKA BUFORA: Jeśli odhaczasz trudne zadanie, nagradzamy Cię przerwą
+      if (isCompleting && isHard && !hasActiveBuffer) {
+        updated.push({
+            id: Date.now(),
+            title: "Odpoczynek dla umysłu ☕",
+            cat: "zdrowie",
+            p: "wysoki", 
+            done: false,
+            duration: "15 min",
+            deadline: new Date().toISOString().split("T")[0], // Wymuszamy 1. miejsce na liście
+            difficulty: 1,
+            desc: "Świetna robota! To zadanie pochłonęło dużo energii. Odejdź od ekranu na kilkanaście minut.",
+            isLocked: false,
+            t: "",
+            isBuffer: true // Ukryta flaga dla algorytmu
+        });
+      }
+      return sortSmartQueue(updated);
+    });
+
+    // Powiadomienie pojawia się z drobnym opóźnieniem
+    if (isCompleting && isHard && !hasActiveBuffer) {
+       setTimeout(() => add("Zasłużona przerwa! Zobacz na szczyt listy.", "ok"), 600);
+    }
   };
   
   const saveTask = (t) => {
-    if (t.id) {
-      setTasks(prev => prev.map(task => task.id === t.id ? {...task, ...t} : task));
-      add("Zmiany zostały zapisane.");
-    } else {
-      setTasks(p => [{...t, id: Date.now(), done: false}, ...p]);
-      add("Zadanie dodane pomyślnie!");
-    }
+    setTasks(prev => {
+      let updatedTasks = [];
+      if (t.id) {
+        updatedTasks = prev.map(task => task.id === t.id ? {...task, ...t} : task);
+      } else {
+        updatedTasks = [{...t, id: Date.now(), done: false}, ...prev];
+      }
+      return sortSmartQueue(updatedTasks); // Aktywacja po zapisie/edycji
+    });
+
+    if (t.id) add("Zmiany zostały zapisane.");
+    else add("Zadanie dodane pomyślnie!");
+    
     setIsTaskModalOpen(false);
     setEditingTask(null);
   };
@@ -1212,7 +1271,9 @@ export default function App() {
 
   if (view === "landing") return <><Font /><Landing onCTA={(mode) => {setAuthMode(mode); setView("auth");}}/></>;
   if (view === "auth") return <><Font /><AuthView mode={authMode} onSwitch={setAuthMode} onBack={() => setView("landing")} onAuth={(u) => {setUser(u); setView("onboarding");}} /></>;
-  if (view === "onboarding") return <><Font /><Onboarding onComplete={() => setView("app")} /></>;
+  
+  /* TUTAJ ZMIANA: Zapisujemy preferencje (prefs) do lokalnej pamięci użytkownika */
+  if (view === "onboarding") return <><Font /><Onboarding onComplete={(prefs) => { setUser({...user, prefs}); setView("app"); }} /></>;
 
   return (
     <div className="flex h-screen bg-[#F5EFE6] font-sans selection:bg-[#2D9E6B] selection:text-white overflow-hidden">
