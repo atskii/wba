@@ -5,7 +5,7 @@ import {
   BookOpen, Brain, RefreshCw, Eye, EyeOff, LogOut, ExternalLink, 
   Filter, Flame, Menu, Bell, Settings, TrendingUp, TrendingDown, 
   Minus, MessageSquare, Leaf, Star, AlertCircle, CheckCircle,
-  Play, Pause, RotateCcw, Target, Sparkles, Trash2
+  Play, Pause, RotateCcw, Target, Sparkles, Trash2, Pencil
 } from "lucide-react";
 
 // ═══════════════════════════════════════════════════
@@ -332,7 +332,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
   const [menu, setMenu] = useState(false);
   const H = { fontFamily: "'Lora', serif" };
   
- // Logika generowania dni w mini-kalendarzu
+  // Logika generowania dni w mini-kalendarzu
   const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
   const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
   
@@ -377,7 +377,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
 
       <div className="flex-1" />
 
-     {/* MINI KALENDARZ W LEWYM DOLNYM ROGU */}
+      {/* MINI KALENDARZ W LEWYM DOLNYM ROGU */}
       {!collapsed && (
         <div className="px-4 py-6 border-t border-[#E8DDD0] bg-[#FAFAFA]">
           <div className="flex items-center justify-between mb-4 px-2">
@@ -389,10 +389,12 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
               <button onClick={() => changeMonth(1)} className="p-1 hover:bg-[#E8DDD0] rounded-md"><ChevronRight size={14}/></button>
             </div>
           </div>
-         <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-bold text-[#9FB5AD] mb-2">
-            {['P', 'W', 'Ś', 'C', 'P', 'S', 'N'].map((d, i) => <div key={i}>{d}</div>)}
+          <div className="grid grid-cols-7 gap-0.5 text-center text-[9px] font-black text-[#9FB5AD] mb-2 uppercase tracking-tighter">
+            {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map((d, i) => (
+              <div key={i} className="whitespace-nowrap">{d}</div>
+            ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5">
             {/* Najpierw mapujemy puste divy, aby przesunąć pierwszy dzień pod właściwą literę */}
             {emptyDays.map((_, idx) => (
               <div key={`empty-${idx}`} className="aspect-square"></div>
@@ -406,7 +408,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
                 <button 
                   key={`day-${idx}`}
                   onClick={() => { setSelectedDate(date); onNav("calendar"); }}
-                  className={`aspect-square flex items-center justify-center rounded-lg text-[10px] font-bold transition-all ${isSelected ? "bg-[#1E5C36] text-white" : isToday ? "text-[#1E5C36] border border-[#1E5C36]" : "text-[#5A7368] hover:bg-[#E8DDD0]"}`}
+                  className={`aspect-square flex items-center justify-center rounded-md text-[9px] font-bold transition-all ${isSelected ? "bg-[#1E5C36] text-white" : isToday ? "text-[#1E5C36] border border-[#1E5C36]" : "text-[#5A7368] hover:bg-[#E8DDD0]"}`}
                 >
                   {date.getDate()}
                 </button>
@@ -494,7 +496,7 @@ function FocusModeView({ task, onClose, onComplete }) {
   );
 }
 
-function TaskCard({task,onToggle, onFocus, onDelete})  {
+function TaskCard({task,onToggle, onFocus, onDelete, onEdit})  {
   const pr=PRIOS.find(x=>x.id===task.p)||PRIOS[0];
   const cat=CATS.find(x=>x.id===task.cat)||CATS[0];
   return (
@@ -530,6 +532,10 @@ function TaskCard({task,onToggle, onFocus, onDelete})  {
               <Play size={14} className="ml-0.5"/>
             </button>
           )}
+          {/* NOWY PRZYCISK EDYCJI */}
+          <button onClick={() => onEdit(task)} title="Edytuj zadanie" className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center shadow-sm">
+            <Pencil size={14}/>
+          </button>
           <button onClick={() => onDelete(task.id)} title="Usuń zadanie" className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm">
             <Trash2 size={14}/>
           </button>
@@ -542,29 +548,25 @@ function TaskCard({task,onToggle, onFocus, onDelete})  {
 // ═══════════════════════════════════════════════════
 //  MODALS & JOURNAL
 // ═══════════════════════════════════════════════════
-function TaskModal({onClose, onAdd}) {
-  // Podstawowe dane
-  const [title, setTitle] = useState("");
-  const [duration, setDuration] = useState("60"); 
-  const [deadline, setDeadline] = useState(""); 
-  const [difficulty, setDifficulty] = useState(3);
-  const [p, setP] = useState("niski");
-  const [desc, setDesc] = useState("");
+function TaskModal({onClose, onSave, taskToEdit}) {
+  const [title, setTitle] = useState(taskToEdit?.title || "");
+  const [duration, setDuration] = useState(taskToEdit?.duration ? taskToEdit.duration.replace(" min", "") : "60"); 
+  const [deadline, setDeadline] = useState(taskToEdit?.deadline ? taskToEdit.deadline.replace(" o ", "T") : ""); 
+  const [difficulty, setDifficulty] = useState(taskToEdit?.difficulty || 3);
+  const [p, setP] = useState(taskToEdit?.p || "niski");
+  const [desc, setDesc] = useState(taskToEdit?.desc || "");
 
-  // Opcje "Kłódki" (Time-blocking)
-  const [isLocked, setIsLocked] = useState(false);
+  const [isLocked, setIsLocked] = useState(taskToEdit?.isLocked || false);
   const [showLockPanel, setShowLockPanel] = useState(false);
-  const [lockDateTime, setLockDateTime] = useState("");
-  const [recurrence, setRecurrence]=useState("jednorazowo");
-  const [recurrenceEnd, setRecurrenceEnd]=useState("");
+  const [lockDateTime, setLockDateTime] = useState(taskToEdit?.lockDateTime || "");
+  const [recurrence, setRecurrence]=useState(taskToEdit?.recurrence || "jednorazowo");
+  const [recurrenceEnd, setRecurrenceEnd]=useState(taskToEdit?.recurrenceEnd || "");
   
   const submit = () => {
     if(!title) return;
     
-    // Obliczanie wagi dla roślinki
     const weight = Math.min(10, Math.round((difficulty * 1.5) + (parseInt(duration || 0) / 60)));
 
-    // Budowanie napisu z czasem (jeśli zadanie jest zablokowane w kalendarzu)
     let timeString = "";
     if (isLocked && lockDateTime) {
       const d = new Date(lockDateTime);
@@ -587,7 +589,8 @@ function TaskModal({onClose, onAdd}) {
       }
     }
 
-    onAdd({
+    onSave({
+      id: taskToEdit?.id,
       title, 
       p, 
       cat: "praca", 
@@ -597,27 +600,25 @@ function TaskModal({onClose, onAdd}) {
       deadline: deadline ? deadline.replace("T", " o ") : "",
       difficulty,
       desc,
-      isLocked
+      isLocked,
+      lockDateTime, recurrence, recurrenceEnd
     });
-    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-[700] flex items-center justify-center bg-[#1A2F22]/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="bg-white rounded-[3rem] shadow-2xl p-10 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20" onClick={e=>e.stopPropagation()}>
         <div className="flex justify-between items-center mb-8">
-           <h3 className="text-3xl font-bold text-[#1A2F22]">Nowe zadanie</h3>
+           <h3 className="text-3xl font-bold text-[#1A2F22]">{taskToEdit ? "Edytuj zadanie" : "Nowe zadanie"}</h3>
            <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={28} className="text-[#1A2F22]"/></button>
         </div>
 
         <div className="space-y-6">
-           {/* Tytuł */}
            <div>
              <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block tracking-widest">Co masz do zrobienia?</label>
              <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Wpisz nazwę zadania..." className="w-full px-6 py-4 rounded-2xl border-2 border-[#E8DDD0] outline-none focus:border-[#2D9E6B] transition-all text-lg font-medium"/>
            </div>
            
-           {/* Czas trwania i Deadline */}
            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block">Szacowany czas</label>
@@ -632,7 +633,6 @@ function TaskModal({onClose, onAdd}) {
               </div>
            </div>
 
-           {/* Suwak Trudności */}
            <div>
               <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block flex justify-between">
                 Wysiłek umysłowy <span>{difficulty} / 5</span>
@@ -644,7 +644,6 @@ function TaskModal({onClose, onAdd}) {
               </div>
            </div>
 
-           {/* Priorytet */}
            <div>
              <label className="text-xs font-black uppercase text-[#5A7368] mb-3 block tracking-widest">Ważność</label>
              <div className="flex flex-wrap gap-2">
@@ -655,10 +654,8 @@ function TaskModal({onClose, onAdd}) {
            </div>
         </div>
 
-        {/* DOLNY PASEK: Kłódka po lewej, Przyciski po prawej */}
         <div className="flex items-end justify-between gap-4 mt-10 relative">
           
-          {/* Przycisk Kłódki */}
           <div className="relative">
             <button 
               onClick={() => setShowLockPanel(!showLockPanel)}
@@ -667,7 +664,6 @@ function TaskModal({onClose, onAdd}) {
               <span className="text-xl leading-none">{isLocked ? "🔒" : "🔓"}</span>
             </button>
 
-            {/* POP-UP KŁÓDKI (Wysuwa się nad przyciskiem i lekko w prawo) */}
             {showLockPanel && (
               <div className="absolute bottom-[115%] left-0 w-72 bg-white rounded-3xl shadow-2xl border border-[#E8DDD0] p-6 z-50 animate-in slide-in-from-bottom-2">
                 <div className="flex justify-between items-center mb-4">
@@ -711,10 +707,11 @@ function TaskModal({onClose, onAdd}) {
             )}
           </div>
 
-          {/* Przyciski dodawania */}
           <div className="flex flex-1 gap-2">
             <button onClick={onClose} className="flex-1 py-4 font-bold text-[#5A7368] hover:bg-slate-50 rounded-2xl transition-all">Anuluj</button>
-            <button onClick={submit} className="flex-[2] py-4 bg-[#1E5C36] text-white rounded-2xl font-bold text-base shadow-xl hover:bg-[#164a2c] transition-all">Dodaj zadanie</button>
+            <button onClick={submit} className="flex-[2] py-4 bg-[#1E5C36] text-white rounded-2xl font-bold text-base shadow-xl hover:bg-[#164a2c] transition-all">
+              {taskToEdit ? "Zapisz zmiany" : "Dodaj zadanie"}
+            </button>
           </div>
         </div>
       </div>
@@ -827,8 +824,7 @@ function StreakPlant({ tasks }) {
 // ═══════════════════════════════════════════════════
 //  DASHBOARD VIEW
 // ═══════════════════════════════════════════════════
-function DashboardView({tasks,moods,onToggle,onAdd,onDelete,onAlert,onFocusTask,loading})  {
-  const [modal,setModal]=useState(false);
+function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete,onAlert,onFocusTask,loading})  {
   const [filter,setFilter]=useState("all");
   const [search,setSearch]=useState("");
   const H={fontFamily:"'Lora',serif"};
@@ -866,7 +862,7 @@ function DashboardView({tasks,moods,onToggle,onAdd,onDelete,onAlert,onFocusTask,
 
           <div className="flex items-center justify-between border-b border-[#E8DDD0] pb-3">
             <h2 style={H} className="text-xl font-bold text-[#1A2F22]">Dzisiejsze zadania</h2>
-            <button onClick={()=>setModal(true)} className="flex items-center gap-1.5 px-4 py-2 bg-[#1E5C36] text-white rounded-xl text-sm font-bold hover:bg-[#164a2c] transition-all shadow-md hover:-translate-y-0.5">
+            <button onClick={onOpenTaskModal} className="flex items-center gap-1.5 px-4 py-2 bg-[#1E5C36] text-white rounded-xl text-sm font-bold hover:bg-[#164a2c] transition-all shadow-md hover:-translate-y-0.5">
               <Plus size={16}/>Dodaj zadanie
             </button>
           </div>
@@ -875,7 +871,7 @@ function DashboardView({tasks,moods,onToggle,onAdd,onDelete,onAlert,onFocusTask,
             {filtered.map(t=>(
               <div key={t.id} className="relative pl-6">
                 <div className="absolute -left-[23px] top-6 w-4 h-4 rounded-full bg-white border-[3px] border-[#2D9E6B] shadow-sm z-10" />
-                <TaskCard task={t} onToggle={onToggle} onFocus={onFocusTask} onDelete={onDelete}/>
+                <TaskCard task={t} onToggle={onToggle} onFocus={onFocusTask} onDelete={onDelete} onEdit={onEditTask}/>
               </div>
             ))}
             {filtered.length === 0 && (
@@ -887,12 +883,10 @@ function DashboardView({tasks,moods,onToggle,onAdd,onDelete,onAlert,onFocusTask,
           <div className="pt-6"><Journal onAlert={onAlert} /></div>
         </div>
 
-        {/* PRZEKAZANIE CAŁEJ LISTY DO KAKTUSA ABY NADAWAŁA TEMPO NAPISOM */}
         <div className="lg:col-span-1">
           <StreakPlant tasks={tasks} />
         </div>
       </div>
-      {modal && <TaskModal onClose={()=>setModal(false)} onAdd={onAdd}/>}
     </div>
   );
 }
@@ -900,13 +894,13 @@ function DashboardView({tasks,moods,onToggle,onAdd,onDelete,onAlert,onFocusTask,
 // ═══════════════════════════════════════════════════
 //  CALENDAR VIEW & WARNING VIEW
 // ═══════════════════════════════════════════════════
-function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, loading })  {
+function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, onEditTask, loading })  {
   const H = { fontFamily: "'Lora', serif" };
   if (loading) return <SkeletonScreen />;
 
-  const hours = Array.from({ length: 16 }, (_, i) => i + 7); // Od 07:00 do 22:00
+  const hours = Array.from({ length: 16 }, (_, i) => i + 7); 
 
-const isSameDate = (textString) => {
+  const isSameDate = (textString) => {
     if (!textString) return false;
     const txt = textString.toLowerCase();
     
@@ -915,36 +909,28 @@ const isSameDate = (textString) => {
     const selDay = selectedDate.getDate();
     const selDateOnly = new Date(selYear, selectedDate.getMonth(), selDay); 
     
-    // 1. Sprawdzanie daty KOŃCOWEJ (Czy zadanie już wygasło?)
     const endMatch = txt.match(/🛑 do (\d{4})-(\d{1,2})-(\d{1,2})/);
     if (endMatch) {
         const endDate = new Date(parseInt(endMatch[1]), parseInt(endMatch[2]) - 1, parseInt(endMatch[3]));
-        if (selDateOnly > endDate) return false; // Jesteśmy w kalendarzu poza datą końcową
+        if (selDateOnly > endDate) return false; 
     }
 
-    // 2. Sprawdzanie daty POCZĄTKOWEJ dla cykli (Żeby zadanie z jutra nie pokazywało się wczoraj)
     const startMatch = textString.match(/\((\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})\)/);
     if (startMatch && (txt.includes("codziennie") || txt.includes("co tydzień") || txt.includes("w dni robocze"))) {
         const startDate = new Date(parseInt(startMatch[3]), parseInt(startMatch[2]) - 1, parseInt(startMatch[1]));
-        if (selDateOnly < startDate) return false; // Cykl się jeszcze nie zaczął
+        if (selDateOnly < startDate) return false; 
     }
 
     const dayOfWeek = selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1; 
     const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
 
-    // 3. Opcja: Zadania "codziennie"
     if (txt.includes("codziennie") || txt.includes("każdego dnia")) return true;
-    
-    // 4. Opcja: W dni robocze
     if (txt.includes("w dni robocze") && dayOfWeek >= 0 && dayOfWeek <= 4) return true;
-
-    // 5. Opcja: Zadania "co tydzień"
     if (txt.includes("co tydzień") || txt.includes("co tydzien")) {
       if (txt.includes(daysArr[dayOfWeek])) return true;
       if (dayOfWeek === 5 && txt.includes("sb")) return true;
     }
 
-    // 6. Opcja: Klasyczna, konkretna data (Jednorazowe)
     const ymd = textString.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
     if (ymd && parseInt(ymd[1]) === selYear && parseInt(ymd[2]) === selMonth && parseInt(ymd[3]) === selDay) return true;
 
@@ -954,11 +940,8 @@ const isSameDate = (textString) => {
     return false;
   };
 
-  // LEWA STRONA: Zadania na oś czasu (Kłódka na dziś LUB Deadline na dziś)
   const timelineTasks = tasks.filter(t => isSameDate(t.t) || (!t.isLocked && isSameDate(t.deadline)));
   
-  
-  // PRAWA STRONA: Cała kolejka zadań (Zrobione na dole, reszta po priorytecie)
   const queueTasks = tasks.filter(t => !t.isLocked).sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1;
     const pMap = { wysoki: 1, sredni: 2, niski: 3 };
@@ -967,7 +950,6 @@ const isSameDate = (textString) => {
 
   return (
     <div className="flex h-screen bg-white">
-      {/* LEWA STRONA: OŚ CZASU */}
       <div className="flex-1 overflow-y-auto p-8 border-r border-[#E8DDD0] pb-24">
         <header className="mb-10">
           <h1 style={H} className="text-3xl font-bold text-[#1A2F22] capitalize">
@@ -978,13 +960,12 @@ const isSameDate = (textString) => {
 
         <div className="relative">
           {hours.map(h => {
-            // Szukamy zadań na tę konkretną godzinę
             const tasksInThisHour = timelineTasks.filter(t => {
               let taskHour = -1;
-              if (isSameDate(t.t)) { // Z kłódką
+              if (isSameDate(t.t)) { 
                 const match = t.t ? t.t.match(/(\d{1,2}):\d{2}/) : null;
                 taskHour = match ? parseInt(match[1]) : t.hour;
-              } else if (isSameDate(t.deadline)) { // Z deadlinem
+              } else if (isSameDate(t.deadline)) { 
                 const match = t.deadline.match(/o (\d{1,2}):\d{2}/);
                 if (match) taskHour = parseInt(match[1]);
               }
@@ -999,11 +980,9 @@ const isSameDate = (textString) => {
                 <div className="flex-1 relative pr-2">
                   {tasksInThisHour.map((t, index) => {
                     const isDeadlineBlock = !isSameDate(t.t) && isSameDate(t.deadline);
-                    
-                    // Magia wysokości: wyciągamy liczby z tekstu (np. "120 min")
                     const match = t.duration ? t.duration.match(/(\d+)/) : null;
-                    const mins = match ? parseInt(match[1]) : 60; // Domyślnie 60 jeśli brak info
-                    const heightRem = (mins / 60) * 6; // 6rem to u nas wysokość jednej godziny
+                    const mins = match ? parseInt(match[1]) : 60; 
+                    const heightRem = (mins / 60) * 6; 
                     
                     return (
                       <div 
@@ -1038,7 +1017,6 @@ const isSameDate = (textString) => {
         </div>
       </div>
 
-      {/* PRAWA STRONA: KOLEJKA ZADAŃ (Backlog) */}
       <div className="w-96 bg-[#FAFAFA] p-8 overflow-y-auto hidden lg:block pb-24">
         <h3 style={H} className="text-xl font-bold text-[#1A2F22] mb-6 flex items-center gap-2">
           <Target size={20} className="text-[#2D9E6B]"/> Do zrobienia
@@ -1068,6 +1046,9 @@ const isSameDate = (textString) => {
                         <Play size={14} className="ml-0.5"/>
                       </button>
                     )}
+                    <button onClick={() => onEditTask(t)} title="Edytuj zadanie" className="w-9 h-9 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center hover:scale-110 shadow-md transition-all opacity-0 group-hover:opacity-100">
+                      <Pencil size={14}/>
+                    </button>
                     <button onClick={() => onDelete(t.id)} title="Usuń zadanie" className="w-9 h-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center hover:scale-110 shadow-md transition-all opacity-0 group-hover:opacity-100">
                       <Trash2 size={14}/>
                     </button>
@@ -1138,6 +1119,9 @@ export default function App() {
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [focusedTask, setFocusedTask] = useState(null);
   
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+
   const [tasks, setTasks] = usePersist("wba_tasks", INIT_TASKS);
   const [moods, setMoods] = usePersist("wba_moods", INIT_MOODS);
   const {ts, add, rm} = useToasts();
@@ -1182,9 +1166,21 @@ export default function App() {
     setTasks(prevTasks => prevTasks.map(t => t.id === id ? {...t, done: !t.done} : t));
   };
   
-const addTask = (t) => {
-    setTasks(p => [{...t, id: Date.now(), done: false}, ...p]);
-    add("Zadanie dodane pomyślnie!");
+  const saveTask = (t) => {
+    if (t.id) {
+      setTasks(prev => prev.map(task => task.id === t.id ? {...task, ...t} : task));
+      add("Zmiany zostały zapisane.");
+    } else {
+      setTasks(p => [{...t, id: Date.now(), done: false}, ...p]);
+      add("Zadanie dodane pomyślnie!");
+    }
+    setIsTaskModalOpen(false);
+    setEditingTask(null);
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setIsTaskModalOpen(true);
   };
 
   const deleteTask = (id) => {
@@ -1221,39 +1217,50 @@ const addTask = (t) => {
             onLogout={() => {setUser(null); setView("landing");}}
             collapsed={isSidebarCollapsed}
             setCollapsed={setSidebarCollapsed}
-            selectedDate={selectedDate} // NOWE
-  setSelectedDate={setSelectedDate} // NOWE
+            selectedDate={selectedDate} 
+            setSelectedDate={setSelectedDate} 
           />
           <main className="flex-1 overflow-y-auto relative bg-[#FAFAFA]">
             <div className="max-w-4xl mx-auto">
               {activeTab === "dashboard" && (
                 <DashboardView 
-                tasks={tasks}
+                 tasks={tasks}
                  moods={moods} 
                  onToggle={toggleTask} 
-                 onAdd={addTask} 
+                 onOpenTaskModal={() => { setEditingTask(null); setIsTaskModalOpen(true); }} 
+                 onEditTask={handleEditTask}
                  onDelete={deleteTask}
-                  onFocusTask={setFocusedTask}
-                  onAlert={() => {
+                 onFocusTask={setFocusedTask}
+                 onAlert={() => {
                     add("Wykryto sygnał ostrzegawczy. Przejdź do Systemu Ostrzegania.", "warn");
                     handleNav("warning");
-                  }}
-                  loading={isLoading}
+                 }}
+                 loading={isLoading}
                 />
               )}
               {activeTab === "calendar" && (
-  <CalendarView 
-  tasks={tasks} 
-  selectedDate={selectedDate} 
-  onToggle={toggleTask} 
-  onDelete={deleteTask}
-    onFocusTask={setFocusedTask}
-    loading={isLoading} 
-  />
-)}
+                <CalendarView 
+                  tasks={tasks} 
+                  selectedDate={selectedDate} 
+                  onToggle={toggleTask} 
+                  onDelete={deleteTask}
+                  onFocusTask={setFocusedTask}
+                  onEditTask={handleEditTask}
+                  loading={isLoading} 
+                />
+              )}
               {activeTab === "warning" && <WarningView loading={isLoading} />}
             </div>
           </main>
+          
+          {isTaskModalOpen && (
+            <TaskModal 
+              onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); }} 
+              onSave={saveTask} 
+              taskToEdit={editingTask} 
+            />
+          )}
+
           {showMoodModal && <MoodModal onClose={() => setShowMoodModal(false)} onAdd={addMood} />}
         </>
       )}
