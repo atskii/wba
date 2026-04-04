@@ -39,29 +39,46 @@ const MOOD_L = ["Bardzo źle","Źle","Neutralnie","Dobrze","Świetnie"];
 const DAYS   = ["Pon","Wt","Śr","Czw","Pt","Sb","Ndz"];
 
 // Dynamiczne generowanie dat dla zadań startowych
-const dzisiaj = new Date();
-const dzisiajYMD = dzisiaj.toISOString().split("T")[0]; // Format: 2026-03-31
+const now = new Date();
+const todayYMD = now.toISOString().split("T")[0]; 
+const todayPL = now.toLocaleDateString("pl-PL"); 
 
-const za3Dni = new Date();
-za3Dni.setDate(dzisiaj.getDate() + 3);
-const za3DniPL = za3Dni.toLocaleDateString("pl-PL"); // Format: 03.04.2026
+// Godzina za 3 godziny (np. do deadlinu na dzisiaj)
+const in3Hours = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+const in3HoursTime = in3Hours.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); 
+const in3HoursYMD = in3Hours.toISOString().split("T")[0]; 
+
+// Jutro
+const tomorrow = new Date(now);
+tomorrow.setDate(now.getDate() + 1);
+const tomorrowYMD = tomorrow.toISOString().split("T")[0];
 
 const INIT_TASKS = [
-  { 
-    id: 1, title: "Raport strategiczny", cat: "praca", w: 8, p: "wysoki", done: false, 
-    duration: "120 min", deadline: `${dzisiajYMD} o 14:00`, difficulty: 4, 
-    desc: "Przejrzeć dane z kwartału", isLocked: false 
+  {
+    id: 1, title: "Zaplanowanie pierwszego tygodnia z aplikacją 🌿", cat: "zdrowie", w: 2, p: "niski", done: false,
+    duration: "15 min", deadline: "", difficulty: 1,
+    desc: "Krótki przegląd funkcji i dodanie własnych celów.", isLocked: false, t: ""
   },
-  { 
-    id: 2, title: "Spotkanie z klientem", cat: "praca", w: 6, p: "sredni", done: false, 
-    t: `🔒 10:00 (${za3DniPL})`, duration: "60 min", hour: 10, deadline: "", difficulty: 3, 
-    desc: "Omówienie warunków umowy", isLocked: true 
+  {
+    id: 2, title: "Wysłanie raportu do przełożonego 📧", cat: "praca", w: 7, p: "wysoki", done: false,
+    duration: "45 min", deadline: `${in3HoursYMD} o ${in3HoursTime}`, difficulty: 4,
+    desc: "Ważne zestawienie danych z ostatniego miesiąca.", isLocked: false, t: ""
   },
-  { 
-    id: 3, title: "Odpisanie na maile", cat: "praca", w: 4, p: "niski", done: false, 
-    duration: "30 min", deadline: `${dzisiajYMD} o 16:00`, difficulty: 2, 
-    desc: "Inbox zero", isLocked: false 
+  {
+    id: 3, title: "Konsultacje projektowe (Zespół) 👥", cat: "praca", w: 6, p: "sredni", done: false,
+    duration: "60 min", deadline: "", difficulty: 3,
+    desc: "Omówienie postępów w projekcie Wellbeing.", isLocked: true, t: `🔒 11:00 (${todayPL})`
   },
+  {
+    id: 4, title: "Projektowanie nowej architektury systemu 🧠", cat: "praca", w: 10, p: "wysoki", done: false,
+    duration: "180 min", deadline: `${tomorrowYMD} o 12:00`, difficulty: 5,
+    desc: "Wymaga pełnego skupienia i trybu Focus Mode.", isLocked: false, t: ""
+  },
+  {
+    id: 5, title: "Trening uważności (Mindfulness) 🧘", cat: "zdrowie", w: 2, p: "niski", done: false,
+    duration: "20 min", deadline: "", difficulty: 1,
+    desc: "Chwila dla siebie przed rozpoczęciem pracy.", isLocked: true, t: `🔒 08:30 (${todayPL}) 🔁 codziennie`
+  }
 ];
 const INIT_MOODS = [
   {id:1,d:"2025-10-13",v:2},{id:2,d:"2025-10-14",v:3},
