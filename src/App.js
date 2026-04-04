@@ -841,68 +841,193 @@ function StreakPlant({ tasks }) {
 }
 
 
+
+
 // ═══════════════════════════════════════════════════
-//  DASHBOARD VIEW
+//  DASHBOARD VIEW (Z IDEALNIE WYCENTROWANYMI PRZERWAMI)
 // ═══════════════════════════════════════════════════
 function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete,onAlert,onFocusTask,loading})  {
-  const [filter,setFilter]=useState("all");
-  const [search,setSearch]=useState("");
   const H={fontFamily:"'Lora',serif"};
+  const [showBacklog, setShowBacklog] = useState(false);
   
   if(loading) return <SkeletonScreen/>;
-  
- const filtered=tasks
-    .filter(t=>filter==="all"||t.cat===filter||t.p===filter)
-    .filter(t=>!search||t.title.toLowerCase().includes(search.toLowerCase()));
+
+  const todayTasks = tasks.filter(t => !t.done);
+  const timelineStart = 6; 
+  const dayLimitMins = 21 * 60; 
+
+  const lockedBlocks = [];
+  todayTasks.forEach(t => {
+    if (t.isLocked && t.t) {
+      const match = t.t.match(/(\d{1,2}):(\d{2})/);
+      if (match) {
+        const startMins = parseInt(match[1]) * 60 + parseInt(match[2]);
+        const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
+        const duration = durMatch ? parseInt(durMatch[1]) : 60;
+        lockedBlocks.push({ ...t, startMins, endMins: startMins + duration });
+      }
+    }
+  });
+  lockedBlocks.sort((a, b) => a.startMins - b.startMins);
+
+  const scheduled = [];
+  const backlog = [];
+  let currentPointer = timelineStart * 60;
+
+  const flexTasks = todayTasks.filter(t => !t.isLocked || !t.t.match(/(\d{1,2}):(\d{2})/));
+
+  flexTasks.forEach(t => {
+    const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
+    const duration = durMatch ? parseInt(durMatch[1]) : 45;
+    const breakTime = t.isBuffer ? 15 : 15; // Zapewniamy min. 15 min luki na tekst
+
+    let fits = false;
+    while (!fits) {
+      const collision = lockedBlocks.find(b => 
+        (currentPointer < b.endMins && (currentPointer + duration) > b.startMins)
+      );
+
+      if (collision) {
+        currentPointer = collision.endMins + 5; 
+      } else {
+        fits = true;
+      }
+    }
+
+    const endPos = currentPointer + duration;
+
+    if (endPos <= dayLimitMins) {
+      scheduled.push({ ...t, startMins: currentPointer, endMins: endPos });
+      currentPointer = endPos + breakTime; 
+    } else {
+      backlog.push(t);
+    }
+  });
+
+  const allOnTimeline = [...lockedBlocks, ...scheduled].sort((a, b) => a.startMins - b.startMins);
+  const lastTaskMins = allOnTimeline.length > 0 ? allOnTimeline[allOnTimeline.length - 1].endMins : (16*60);
+  const timelineEndHour = Math.max(18, Math.ceil(lastTaskMins / 60) + 1);
+  const hours = Array.from({ length: timelineEndHour - timelineStart + 1 }, (_, i) => timelineStart + i);
+
+  const minsToRem = (mins) => (mins / 60) * 8; // Skala (8rem na h)
+  const formatTime = (mins) => `${Math.floor(mins/60)}:${(mins%60).toString().padStart(2,'0')}`;
+
   return (
-    <div className="p-6 pb-10 max-w-5xl mx-auto">
-      <div className="pt-4 mb-8">
-        <p className="text-xs text-[#9FB5AD] font-bold uppercase tracking-widest mb-1">
-          {new Date().toLocaleDateString("pl-PL",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-        </p>
-        <h1 style={H} className="text-3xl font-bold text-[#1A2F22]">Cześć Natalia!</h1>
+    <div className="p-8 max-w-6xl mx-auto w-full pb-32">
+      <div className="flex items-center justify-between mb-12">
+        <h1 style={H} className="text-4xl font-bold text-[#1A2F22] tracking-tight">Dzisiejsze zadania</h1>
+        <button onClick={onOpenTaskModal} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8DDD0] text-[#1A2F22] rounded-xl text-sm font-bold hover:bg-[#F5EFE6] hover:border-[#2D9E6B] transition-all shadow-sm active:scale-95">
+          Dodaj zadanie <Plus size={18}/>
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex gap-2">
-            <div className="flex-1 flex items-center gap-2 bg-white rounded-2xl border border-[#E8DDD0] px-4 py-3 shadow-sm focus-within:border-[#2D9E6B] transition-colors">
-              <Search size={16} className="text-[#9FB5AD]"/>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Szukaj zadań..." className="flex-1 text-sm focus:outline-none text-[#1A2F22] bg-transparent"/>
-            </div>
-            <select value={filter} onChange={e=>setFilter(e.target.value)} className="bg-white border border-[#E8DDD0] rounded-2xl px-4 py-3 text-sm text-[#5A7368] focus:outline-none shadow-sm cursor-pointer hover:border-[#2D9E6B] transition-colors">
-              <option value="all">Wszystkie</option>
-              {CATS.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
-            </select>
-          </div>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 items-start">
+        <div className="xl:col-span-8 relative">
+          {/* Oś czasu */}
+          <div className="absolute left-[3.25rem] top-2 bottom-0 border-l-2 border-dashed border-[#C4BBAF] z-0"></div>
 
-          <div className="flex items-center justify-between border-b border-[#E8DDD0] pb-3">
-            <h2 style={H} className="text-xl font-bold text-[#1A2F22]">Dzisiejsze zadania</h2>
-            <button onClick={onOpenTaskModal} className="flex items-center gap-1.5 px-4 py-2 bg-[#1E5C36] text-white rounded-xl text-sm font-bold hover:bg-[#164a2c] transition-all shadow-md hover:-translate-y-0.5">
-              <Plus size={16}/>Dodaj zadanie
-            </button>
-          </div>
-          
-          <div className="space-y-5 pl-2 border-l-[3px] border-dashed border-[#E8DDD0] ml-4 pt-2">
-            {filtered.map(t=>(
-              <div key={t.id} className="relative pl-6">
-                <div className="absolute -left-[23px] top-6 w-4 h-4 rounded-full bg-white border-[3px] border-[#2D9E6B] shadow-sm z-10" />
-                <TaskCard task={t} onToggle={onToggle} onFocus={onFocusTask} onDelete={onDelete} onEdit={onEditTask}/>
+          <div className="relative" style={{ height: `${minsToRem((timelineEndHour - timelineStart) * 60)}rem` }}>
+            {hours.map((h, i) => (
+              <div key={h} className="absolute left-0 flex items-center w-full" style={{ top: `${minsToRem(i * 60)}rem` }}>
+                <span className="text-[11px] font-bold text-[#9FB5AD] w-10 text-right bg-[#FAFAFA] py-1">{h}:00</span>
+                <div className="w-4 h-[1px] bg-[#E8DDD0] ml-2"></div>
               </div>
             ))}
-            {filtered.length === 0 && (
-              <div className="pl-6 py-4">
-                 <p className="text-[#9FB5AD] text-sm font-medium">Brak zadań. Twój plan jest czysty!</p>
+
+            {allOnTimeline.map(t => {
+              const topRem = minsToRem(t.startMins - (timelineStart * 60));
+              const heightRem = minsToRem(t.endMins - t.startMins);
+              
+              // WYGLĄD PRZERWY: Idealnie wycentrowany pionowo
+              if (t.isBuffer) {
+                return (
+                  <div 
+                    key={t.id} 
+                    className="absolute left-20 right-0 flex items-center gap-3 z-20 group" 
+                    style={{ top: `${topRem}rem`, height: `${heightRem}rem` }}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#E8F4ED] flex items-center justify-center text-[#2D9E6B] shadow-sm border border-[#2D9E6B]/10">
+                      <Leaf size={16}/>
+                    </div>
+                    <p className="text-sm font-bold text-[#2D9E6B] italic drop-shadow-sm">Psst... {t.title}</p>
+                    <button 
+                      onClick={() => onToggle(t.id)} 
+                      className="ml-auto px-3 py-1.5 opacity-0 group-hover:opacity-100 bg-white border border-[#2D9E6B] text-[#2D9E6B] rounded-xl text-[10px] font-black uppercase transition-all hover:bg-[#E8F4ED]"
+                    >
+                      Zrobione
+                    </button>
+                  </div>
+                );
+              }
+
+              const pInfo = PRIOS.find(x => x.id === t.p) || PRIOS[0];
+
+              return (
+                <div 
+                  key={t.id} 
+                  onClick={() => onEditTask(t)}
+                  className={`absolute left-20 right-0 bg-white rounded-2xl p-5 shadow-sm border border-[#E8DDD0] z-20 transition-all cursor-pointer group
+                    hover:shadow-xl hover:border-[#2D9E6B] hover:bg-[#FBFFF1] hover:-translate-y-0.5 active:scale-[0.99] flex flex-col justify-center`}
+                  style={{ top: `${topRem + 0.2}rem`, height: `${heightRem - 0.4}rem`, minHeight: '5.5rem' }}
+                >
+                  <div className="flex justify-between items-start h-full">
+                    <div className="flex gap-4">
+                      <div className={`mt-1 ${t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        <Star size={22} fill="currentColor" strokeWidth={1} />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-[#1A2F22] group-hover:text-[#1E5C36] transition-colors">{t.title}</h4>
+                        <p className="text-xs font-bold text-[#5A7368] mt-1">{formatTime(t.startMins)} — {formatTime(t.endMins)}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full tracking-wider ${pInfo.tw}`}>
+                        {pInfo.label}
+                      </span>
+                      {t.isLocked && <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">SZTYWNY TERMIN</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="xl:col-span-4 space-y-6 pt-16">
+          <StreakPlant tasks={tasks} />
+          <Journal onAlert={onAlert} />
+        </div>
+      </div>
+
+      {/* BACKLOG */}
+      {backlog.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center p-4 pointer-events-none">
+          <div className="bg-white border-2 border-[#E8DDD0] shadow-2xl rounded-t-[2.5rem] w-full max-w-2xl p-6 pointer-events-auto transition-all animate-in slide-in-from-bottom">
+            <button onClick={() => setShowBacklog(!showBacklog)} className="w-full flex items-center justify-between mb-4 group">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-50 text-red-500 p-2 rounded-xl"><AlertCircle size={20}/></div>
+                <div className="text-left">
+                  <h3 className="font-bold text-[#1A2F22] text-sm">Zadania poza planem ({backlog.length})</h3>
+                  <p className="text-[10px] text-[#5A7368]">Te zadania nie zmieściły się w Twoim zdrowym limicie czasowym.</p>
+                </div>
+              </div>
+              <div className={`p-2 rounded-full bg-slate-50 transition-transform ${showBacklog ? 'rotate-180' : ''}`}>
+                <ChevronDown size={20} className="text-[#9FB5AD]"/>
+              </div>
+            </button>
+            {showBacklog && (
+              <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                {backlog.map(t => (
+                  <div key={t.id} className="flex items-center justify-between p-4 bg-[#F9FAFB] rounded-2xl border border-[#E8DDD0] hover:border-[#2D9E6B] transition-all cursor-pointer" onClick={() => onEditTask(t)}>
+                    <span className="text-sm font-bold text-[#1A2F22]">{t.title}</span>
+                    <span className="text-[10px] font-bold text-[#5A7368]">{t.duration}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-          <div className="pt-6"><Journal onAlert={onAlert} /></div>
         </div>
-
-        <div className="lg:col-span-1">
-          <StreakPlant tasks={tasks} />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -1153,43 +1278,29 @@ export default function App() {
     setTimeout(() => setIsLoading(false), 800);
   };
 
- 
-
-// --- ALGORYTM INTELIGENTNEGO KOLEJKOWANIA (Z TRUDNOŚCIĄ I NASTROJEM) ---
   const sortSmartQueue = (tasksList) => {
     const todayStr = new Date().toISOString().split("T")[0];
-    // Pobieramy ostatni nastrój użytkownika (domyślnie 2 - neutralny)
     const lastMood = moods.length > 0 ? moods[moods.length - 1].v : 2; 
 
     const getScore = (task) => {
       if (task.done) return -1000;
-      
       let score = 0;
       
-      // 1. Priorytet klasyczny
       if (task.p === "wysoki") score += 30;
       if (task.p === "sredni") score += 20;
       if (task.p === "niski") score += 10;
       
-      // 2. Deadline na dziś
-      if (task.deadline && task.deadline.startsWith(todayStr)) {
-        score += 100;
-      }
+      if (task.deadline && task.deadline.startsWith(todayStr)) score += 100;
       
-      // 3. Quick Wins
       const match = task.duration ? task.duration.match(/(\d+)/) : null;
       const mins = match ? parseInt(match[1]) : 60;
       if (mins <= 30) score += 5;
 
-      // 4. NOWE: Dynamika Trudności i Energii (Difficulty)
       if (lastMood <= 1) {
-        // Jeśli nastrój jest ZŁY (0-1): Trudne zadania lecą na dół listy
         score -= (task.difficulty || 0) * 15; 
       } else {
-        // Jeśli nastrój jest OK (2-4): Trudne zadania idą do góry (Eat That Frog)
         score += (task.difficulty || 0) * 6; 
       }
-      
       return score;
     };
 
@@ -1197,42 +1308,38 @@ export default function App() {
   };
 
   const toggleTask = (id) => {
-    // Sprawdzamy co dokładnie użytkownik właśnie "klika"
     const taskToToggle = tasks.find(t => t.id === id); 
     const isCompleting = taskToToggle && !taskToToggle.done;
-    
-    // Sprawdzamy czy to zadanie wysysa dużo energii (trudność 4 lub 5)
     const isHard = taskToToggle && taskToToggle.difficulty >= 4;
-    
-    // Upewniamy się, czy na liście nie wisi już jakaś przerwa (żeby ich nie dublować)
     const hasActiveBuffer = tasks.some(t => t.isBuffer && !t.done);
 
     setTasks(prevTasks => {
       let updated = prevTasks.map(t => t.id === id ? {...t, done: !t.done} : t);
       
-      // LOGIKA BUFORA: Jeśli odhaczasz trudne zadanie, nagradzamy Cię przerwą
       if (isCompleting && isHard && !hasActiveBuffer) {
+        const userActs = (user && user.prefs && user.prefs.length > 0) ? user.prefs : ["Odpoczynek dla umysłu"];
+        const randomAct = userActs[Math.floor(Math.random() * userActs.length)];
+
         updated.push({
             id: Date.now(),
-            title: "Odpoczynek dla umysłu ☕",
+            title: `${randomAct} 🌿`,
             cat: "zdrowie",
             p: "wysoki", 
             done: false,
             duration: "15 min",
-            deadline: new Date().toISOString().split("T")[0], // Wymuszamy 1. miejsce na liście
+            deadline: new Date().toISOString().split("T")[0],
             difficulty: 1,
-            desc: "Świetna robota! To zadanie pochłonęło dużo energii. Odejdź od ekranu na kilkanaście minut.",
+            desc: "Świetna robota! To zadanie pochłonęło dużo energii. Wykorzystaj ten czas na regenerację.",
             isLocked: false,
             t: "",
-            isBuffer: true // Ukryta flaga dla algorytmu
+            isBuffer: true
         });
       }
       return sortSmartQueue(updated);
     });
 
-    // Powiadomienie pojawia się z drobnym opóźnieniem
     if (isCompleting && isHard && !hasActiveBuffer) {
-       setTimeout(() => add("Zasłużona przerwa! Zobacz na szczyt listy.", "ok"), 600);
+       setTimeout(() => add("Zasłużona przerwa! Zobacz na Harmonogram.", "ok"), 600);
     }
   };
   
@@ -1244,7 +1351,7 @@ export default function App() {
       } else {
         updatedTasks = [{...t, id: Date.now(), done: false}, ...prev];
       }
-      return sortSmartQueue(updatedTasks); // Aktywacja po zapisie/edycji
+      return sortSmartQueue(updatedTasks);
     });
 
     if (t.id) add("Zmiany zostały zapisane.");
@@ -1271,8 +1378,6 @@ export default function App() {
 
   if (view === "landing") return <><Font /><Landing onCTA={(mode) => {setAuthMode(mode); setView("auth");}}/></>;
   if (view === "auth") return <><Font /><AuthView mode={authMode} onSwitch={setAuthMode} onBack={() => setView("landing")} onAuth={(u) => {setUser(u); setView("onboarding");}} /></>;
-  
-  /* TUTAJ ZMIANA: Zapisujemy preferencje (prefs) do lokalnej pamięci użytkownika */
   if (view === "onboarding") return <><Font /><Onboarding onComplete={(prefs) => { setUser({...user, prefs}); setView("app"); }} /></>;
 
   return (
@@ -1299,7 +1404,8 @@ export default function App() {
             setSelectedDate={setSelectedDate} 
           />
           <main className="flex-1 overflow-y-auto relative bg-[#FAFAFA]">
-            <div className="max-w-4xl mx-auto">
+            {/* ZMIANA TUTAJ: W-full zamiast max-w-4xl aby zmieścić 3 kolumny */}
+            <div className="w-full">
               {activeTab === "dashboard" && (
                 <DashboardView 
                  tasks={tasks}
