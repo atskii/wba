@@ -5,7 +5,7 @@ import {
   BookOpen, Brain, RefreshCw, Eye, EyeOff, LogOut, ExternalLink, 
   Filter, Flame, Menu, Bell, Settings, TrendingUp, TrendingDown, 
   Minus, MessageSquare, Leaf, Star, AlertCircle, CheckCircle,
-  Play, Pause, RotateCcw, Target, Sparkles, Trash2, Pencil
+  Play, Pause, RotateCcw, Target, Sparkles, Trash2, Pencil, Lock
 } from "lucide-react";
 
 // ═══════════════════════════════════════════════════
@@ -844,7 +844,7 @@ function StreakPlant({ tasks }) {
 
 
 // ═══════════════════════════════════════════════════
-//  DASHBOARD VIEW (Z IDEALNIE WYCENTROWANYMI PRZERWAMI)
+//  DASHBOARD VIEW (Z AUTOMATYCZNYMI PRZERWAMI I CZYSTĄ GÓRĄ OSI)
 // ═══════════════════════════════════════════════════
 function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete,onAlert,onFocusTask,loading})  {
   const H={fontFamily:"'Lora',serif"};
@@ -852,7 +852,7 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
   
   if(loading) return <SkeletonScreen/>;
 
-  const todayTasks = tasks.filter(t => !t.done);
+  const todayTasks = tasks;
   const timelineStart = 6; 
   const dayLimitMins = 21 * 60; 
 
@@ -874,17 +874,34 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
   const backlog = [];
   let currentPointer = timelineStart * 60;
 
-  const flexTasks = todayTasks.filter(t => !t.isLocked || !t.t.match(/(\d{1,2}):(\d{2})/));
+  const flexTasks = [...todayTasks]
+    .filter(t => !t.isLocked || !t.t.match(/(\d{1,2}):(\d{2})/))
+    // NOWE: Całkowicie wyrzucamy z widoku przerwy, które zostały już zrobione
+    .filter(t => !(t.isBuffer && t.done)) 
+    .sort((a, b) => {
+      // Zrobione zadania lecą na początek osi (aby nie blokowały aktualnego czasu)
+      if (a.done && !b.done) return -1;
+      if (!a.done && b.done) return 1;
+      if (a.done && b.done) return a.id - b.id;
+      // Aktywny bufor ląduje zawsze bezpośrednio po zrobionych zadaniach
+      if (a.isBuffer && !b.isBuffer) return -1;
+      if (!a.isBuffer && b.isBuffer) return 1;
+      return 0; 
+    });
 
   flexTasks.forEach(t => {
     const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
-    const duration = durMatch ? parseInt(durMatch[1]) : 45;
-    const breakTime = t.isBuffer ? 15 : 15; // Zapewniamy min. 15 min luki na tekst
+    let duration = durMatch ? parseInt(durMatch[1]) : (t.isBuffer ? 15 : 45);
 
+    const visualDuration = t.isBuffer ? Math.max(duration, 25) : Math.max(duration, 45);
+    const breakTime = t.isBuffer ? 0 : 5; 
+
+    const neededSpace = visualDuration + breakTime;
     let fits = false;
+
     while (!fits) {
       const collision = lockedBlocks.find(b => 
-        (currentPointer < b.endMins && (currentPointer + duration) > b.startMins)
+        (currentPointer < b.endMins && (currentPointer + neededSpace) > b.startMins)
       );
 
       if (collision) {
@@ -894,22 +911,46 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
       }
     }
 
-    const endPos = currentPointer + duration;
+    const endPos = currentPointer + duration; 
+    const visualEndPos = currentPointer + visualDuration; 
 
-    if (endPos <= dayLimitMins) {
-      scheduled.push({ ...t, startMins: currentPointer, endMins: endPos });
-      currentPointer = endPos + breakTime; 
+    if (visualEndPos <= dayLimitMins) {
+      scheduled.push({ ...t, startMins: currentPointer, endMins: endPos, visualEndMins: visualEndPos });
+      currentPointer = visualEndPos + breakTime; 
     } else {
       backlog.push(t);
     }
   });
 
   const allOnTimeline = [...lockedBlocks, ...scheduled].sort((a, b) => a.startMins - b.startMins);
+
+  // Generowanie Automatycznych Przerw w wolnych miejscach
+  const timelineWithGaps = [];
+  allOnTimeline.forEach((t, i) => {
+    timelineWithGaps.push(t);
+    if (i < allOnTimeline.length - 1) {
+      const currEnd = t.visualEndMins || t.endMins;
+      const nextStart = allOnTimeline[i+1].startMins;
+      const gap = nextStart - currEnd;
+      
+      if (gap >= 15) {
+        timelineWithGaps.push({
+          id: `auto-gap-${i}`,
+          isVisualGap: true,
+          title: "Czas na regenerację",
+          duration: `${gap} min`,
+          startMins: currEnd,
+          endMins: nextStart
+        });
+      }
+    }
+  });
+
   const lastTaskMins = allOnTimeline.length > 0 ? allOnTimeline[allOnTimeline.length - 1].endMins : (16*60);
   const timelineEndHour = Math.max(18, Math.ceil(lastTaskMins / 60) + 1);
   const hours = Array.from({ length: timelineEndHour - timelineStart + 1 }, (_, i) => timelineStart + i);
 
-  const minsToRem = (mins) => (mins / 60) * 8; // Skala (8rem na h)
+  const minsToRem = (mins) => (mins / 60) * 8; 
   const formatTime = (mins) => `${Math.floor(mins/60)}:${(mins%60).toString().padStart(2,'0')}`;
 
   return (
@@ -923,7 +964,6 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 items-start">
         <div className="xl:col-span-8 relative">
-          {/* Oś czasu */}
           <div className="absolute left-[3.25rem] top-2 bottom-0 border-l-2 border-dashed border-[#C4BBAF] z-0"></div>
 
           <div className="relative" style={{ height: `${minsToRem((timelineEndHour - timelineStart) * 60)}rem` }}>
@@ -934,58 +974,107 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
               </div>
             ))}
 
-            {allOnTimeline.map(t => {
+            {timelineWithGaps.map(t => {
               const topRem = minsToRem(t.startMins - (timelineStart * 60));
-              const heightRem = minsToRem(t.endMins - t.startMins);
+              const visualEnd = t.visualEndMins || t.endMins;
+              const heightRem = minsToRem(visualEnd - t.startMins);
               
-              // WYGLĄD PRZERWY: Idealnie wycentrowany pionowo
-              if (t.isBuffer) {
+              // WIZUALNA PRZERWA W LUKACH KALENDARZA
+              if (t.isVisualGap) {
                 return (
                   <div 
                     key={t.id} 
-                    className="absolute left-20 right-0 flex items-center gap-3 z-20 group" 
+                    className="absolute left-20 right-0 flex items-center justify-center z-10 pointer-events-none" 
                     style={{ top: `${topRem}rem`, height: `${heightRem}rem` }}
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#E8F4ED] flex items-center justify-center text-[#2D9E6B] shadow-sm border border-[#2D9E6B]/10">
-                      <Leaf size={16}/>
+                    <div className="w-full border-t-2 border-dashed border-[#2D9E6B]/30 flex items-center justify-center relative">
+                      <div className="absolute bg-[#FAFAFA] px-4 py-1.5 rounded-full border border-[#2D9E6B]/20 flex items-center gap-2 shadow-sm">
+                        <Leaf size={12} className="text-[#2D9E6B]"/>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-[#5A7368]">{t.title} ({t.duration})</span>
+                      </div>
                     </div>
-                    <p className="text-sm font-bold text-[#2D9E6B] italic drop-shadow-sm">Psst... {t.title}</p>
-                    <button 
-                      onClick={() => onToggle(t.id)} 
-                      className="ml-auto px-3 py-1.5 opacity-0 group-hover:opacity-100 bg-white border border-[#2D9E6B] text-[#2D9E6B] rounded-xl text-[10px] font-black uppercase transition-all hover:bg-[#E8F4ED]"
-                    >
-                      Zrobione
-                    </button>
                   </div>
                 );
               }
 
-              const pInfo = PRIOS.find(x => x.id === t.p) || PRIOS[0];
+              // WŁAŚCIWY, INTERAKTYWNY BUFOR (NP. PO TRUDNYM ZADANIU)
+              if (t.isBuffer) {
+                return (
+                  <div 
+                    key={t.id} 
+                    className={`absolute left-20 right-0 flex items-center gap-4 z-20 hover:z-50 group transition-all duration-300 px-5 py-3 rounded-2xl bg-gradient-to-r shadow-sm border ${t.done ? 'from-gray-100 to-gray-50 opacity-60 grayscale border-gray-200' : 'from-[#E8F4ED] to-[#FBFFF1] border-[#2D9E6B]/30'}`} 
+                    style={{ top: `${topRem + 0.1}rem`, height: `${heightRem - 0.2}rem`, minHeight: '3.5rem' }}
+                  >
+                    <div className={`w-9 h-9 flex-shrink-0 rounded-full flex items-center justify-center shadow-sm border ${t.done ? 'bg-gray-200 text-gray-500 border-gray-300' : 'bg-white text-[#2D9E6B] border-[#2D9E6B]/20'}`}>
+                      <Leaf size={16}/>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                       <p className={`text-sm font-bold truncate ${t.done ? 'text-gray-500 line-through' : 'text-[#1E5C36]'}`}>{t.title}</p>
+                       {!t.done && <p className="text-[10px] font-bold text-[#5A7368] truncate mt-0.5">{t.desc}</p>}
+                    </div>
+                    <div className="ml-auto flex items-center gap-3 pl-2">
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${t.done ? 'text-gray-400' : 'text-[#2D9E6B]'}`}>{t.duration}</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all opacity-0 group-hover:opacity-100 ${t.done ? 'bg-[#5A7368] text-white' : 'bg-white text-[#1E5C36] border border-[#2D9E6B]'}`}
+                      >
+                        <Check size={14} className={t.done ? "" : "ml-0.5"}/>
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
 
+              // NORMALNE ZADANIE
               return (
                 <div 
                   key={t.id} 
                   onClick={() => onEditTask(t)}
-                  className={`absolute left-20 right-0 bg-white rounded-2xl p-5 shadow-sm border border-[#E8DDD0] z-20 transition-all cursor-pointer group
-                    hover:shadow-xl hover:border-[#2D9E6B] hover:bg-[#FBFFF1] hover:-translate-y-0.5 active:scale-[0.99] flex flex-col justify-center`}
+                  className={`absolute left-20 right-0 rounded-2xl p-5 shadow-sm border z-20 hover:z-50 transition-all cursor-pointer group flex flex-col justify-center
+                    ${t.done
+                      ? 'bg-gray-50 border-gray-200 opacity-60 grayscale hover:opacity-80'
+                      : 'bg-white border-[#E8DDD0] hover:shadow-xl hover:border-[#2D9E6B] hover:bg-[#FBFFF1] hover:-translate-y-0.5 active:scale-[0.99]'}`}
                   style={{ top: `${topRem + 0.2}rem`, height: `${heightRem - 0.4}rem`, minHeight: '5.5rem' }}
                 >
-                  <div className="flex justify-between items-start h-full">
+                  <div className="flex justify-between items-start h-full relative">
+                    
                     <div className="flex gap-4">
-                      <div className={`mt-1 ${t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      <div className={`mt-1 flex-shrink-0 ${t.done ? 'text-gray-400' : t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
                         <Star size={22} fill="currentColor" strokeWidth={1} />
                       </div>
                       <div>
-                        <h4 className="text-base font-bold text-[#1A2F22] group-hover:text-[#1E5C36] transition-colors">{t.title}</h4>
-                        <p className="text-xs font-bold text-[#5A7368] mt-1">{formatTime(t.startMins)} — {formatTime(t.endMins)}</p>
+                        <h4 className={`text-base font-bold transition-colors pr-32 ${t.done ? 'line-through text-gray-500' : 'text-[#1A2F22] group-hover:text-[#1E5C36]'}`}>{t.title}</h4>
+                        <p className={`text-xs font-bold mt-1 ${t.done ? 'text-gray-400' : 'text-[#5A7368]'}`}>{formatTime(t.startMins)} — {formatTime(t.endMins)}</p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full tracking-wider ${pInfo.tw}`}>
-                        {pInfo.label}
-                      </span>
-                      {t.isLocked && <span className="text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">SZTYWNY TERMIN</span>}
+                    
+                    <div className={`absolute top-0 right-0 flex items-center gap-1.5 transition-all z-30 ${t.done ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                        {!t.done && (
+                          <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} title="Rozpocznij Głębokie Skupienie" className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all">
+                            <Play size={14} className="ml-0.5"/>
+                          </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} title="Usuń zadanie" className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all">
+                          <Trash2 size={14}/>
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onToggle(t.id); }}
+                          title={t.done ? "Cofnij wykonanie" : "Zaznacz jako zrobione"}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all tracking-wider ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}
+                        >
+                          <Check size={14} className={t.done ? "" : "ml-0.5"}/>
+                        </button>
                     </div>
+
+                    {t.isLocked && (
+                      <div
+                        title="Sztywny termin zablokowany w kalendarzu"
+                        className={`absolute bottom-0 left-0 flex items-center justify-center w-[22px] h-[22px] rounded border border-[#E8DDD0] bg-white shadow-sm z-30 transition-all ${t.done ? 'opacity-50' : ''}`}
+                      >
+                        <Lock size={12} strokeWidth={2.5} className="text-[#5A7368]" />
+                      </div>
+                    )}
+
                   </div>
                 </div>
               );
@@ -999,7 +1088,7 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
         </div>
       </div>
 
-      {/* BACKLOG */}
+      {/* BACKLOG (Zadania poza planem) */}
       {backlog.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center p-4 pointer-events-none">
           <div className="bg-white border-2 border-[#E8DDD0] shadow-2xl rounded-t-[2.5rem] w-full max-w-2xl p-6 pointer-events-auto transition-all animate-in slide-in-from-bottom">
@@ -1018,9 +1107,47 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
             {showBacklog && (
               <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {backlog.map(t => (
-                  <div key={t.id} className="flex items-center justify-between p-4 bg-[#F9FAFB] rounded-2xl border border-[#E8DDD0] hover:border-[#2D9E6B] transition-all cursor-pointer" onClick={() => onEditTask(t)}>
-                    <span className="text-sm font-bold text-[#1A2F22]">{t.title}</span>
-                    <span className="text-[10px] font-bold text-[#5A7368]">{t.duration}</span>
+                  <div key={t.id} className={`p-5 rounded-2xl border transition-all cursor-pointer group relative flex flex-col justify-between ${t.done ? 'bg-gray-50 border-gray-200 opacity-60 grayscale' : 'bg-[#F9FAFB] border-[#E8DDD0] hover:border-[#2D9E6B]'}`} onClick={() => onEditTask(t)} style={{minHeight: '5.5rem'}}>
+                    <div className="flex items-start gap-4 pr-28">
+                       <div className={`mt-0.5 flex-shrink-0 ${t.done ? 'text-gray-400' : t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                         <Star size={18} fill="currentColor" strokeWidth={1} />
+                       </div>
+                       
+                       <div className="flex flex-col gap-1.5">
+                         <div className="flex items-center gap-2">
+                           <button onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${t.done ? 'bg-[#5A7368] border-[#5A7368] text-white' : 'bg-white border-[#C4BBAF] text-transparent hover:border-[#2D9E6B] hover:text-[#2D9E6B]'}`}>
+                             <Check size={10}/>
+                           </button>
+                           <span className={`text-sm font-bold ${t.done ? 'line-through text-gray-500' : 'text-[#1A2F22]'}`}>{t.title}</span>
+                         </div>
+                         <span className={`text-[10px] font-bold ${t.done ? 'text-gray-400' : 'text-[#5A7368]'}`}>{t.duration}</span>
+                       </div>
+                    </div>
+                    
+                    <div className={`flex gap-1 transition-all absolute top-5 right-5 z-30 ${t.done ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                      {!t.done && (
+                        <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} title="Rozpocznij Głębokie Skupienie" className="w-7 h-7 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm transition-all">
+                          <Play size={12} className="ml-0.5"/>
+                        </button>
+                      )}
+                      <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} title="Usuń" className="w-7 h-7 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm">
+                        <Trash2 size={12}/>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onToggle(t.id); }}
+                        title={t.done ? "Cofnij wykonanie" : "Zaznacz jako zrobione"}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center shadow-sm transition-all ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}
+                      >
+                        <Check size={12} className={t.done ? "" : "ml-0.5"}/>
+                      </button>
+                    </div>
+
+                    {t.isLocked && (
+                      <div title="Sztywny termin zablokowany w kalendarzu" className="absolute bottom-4 left-5 z-30 flex items-center justify-center w-[18px] h-[18px] rounded border border-[#E8DDD0] bg-white shadow-sm">
+                        <Lock size={10} strokeWidth={2.5} className="text-[#5A7368]" />
+                      </div>
+                    )}
+
                   </div>
                 ))}
               </div>
