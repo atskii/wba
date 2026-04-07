@@ -72,8 +72,11 @@ const CONTACTS = [
     desc: "Wyłącznie w sytuacjach bezpośredniego zagrożenia życia lub zdrowia wymagających natychmiastowej interwencji służb." 
   },
 ];
-const EMOJIS = ["😫","😟","😐","😊","😄"];
-const MOOD_L = ["Bardzo źle","Źle","Neutralnie","Dobrze","Świetnie"];
+const EMOJIS = ["😫", "😩", "😟", "😕", "😐", "🤨", "🙂", "😊", "😄", "🤩"];
+const MOOD_L = [
+  "Tragedia", "Bardzo źle", "Źle", "Słabo", "Mogło być lepiej", 
+  "Neutralnie", "Dobrze", "Bardzo dobrze", "Świetnie", "Fantastycznie"
+];
 const DAYS   = ["Pon","Wt","Śr","Czw","Pt","Sb","Ndz"];
 
 // --- ROZSZERZONE DYNAMICZNE DATY ---
@@ -138,9 +141,50 @@ const INIT_TASKS = [
   { id: 25, title: "Trening cardio 🏃", w: 4, p: "sredni", done: false, duration: "45 min", deadline: "", difficulty: 4, desc: "Poprawa kondycji.", isLocked: false, t: "" }
 ];
 
-const INIT_MOODS = [
-  {id:1,d:"2025-10-13",v:2},{id:2,d:"2025-10-14",v:3},
-];
+const generateHistoricalMoods = () => {
+  const moods = [];
+  const notes = [
+    "Sesja poprawkowa – 200 maili w skrzynce, przytłaczające.",
+    "Wpisane oceny do USOS – system o dziwo nie padł, ogromna ulga.",
+    "Dzień rektorski – nareszcie chwila na własne badania naukowe.",
+    "Seminarium magisterskie – studenci mają świetne tematy, to buduje!",
+    "Kolejne zebranie instytutu, nic konkretnego nie ustalono.",
+    "Udało się wysłać artykuł do recenzji, trzymam kciuki.",
+    "Znowu problem z rzutnikiem w sali 104...",
+    "Świetna dyskusja na dzisiejszym wykładzie z 3 rokiem.",
+    "Niespodziewane zastępstwo za kolegę. Brak czasu na obiadową przerwę.",
+    "Udało się zamknąć grant badawczy na ten rok! Ogromna satysfakcja."
+  ];
+  
+  const now = new Date();
+  let currentNoteIndex = 0;
+
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    
+    // Trend z "falowaniem", aby wykres był bardziej poszarpany i realistyczny
+    let trend = i > 60 ? 1 : i > 30 ? 2 : 3;
+    let wave = Math.sin(i / 3) * 1.5; 
+    let randomVariation = (Math.random() * 2) - 1; 
+    
+    let val = Math.round(trend + wave + randomVariation);
+    val = Math.max(0, Math.min(4, val)); 
+    
+    // Zagęszczenie notatek, aby upewnić się, że widać je na każdym filtrze
+    let note = "";
+    if (i % 4 === 0 || i === 2 || i === 5) {
+      note = notes[currentNoteIndex % notes.length];
+      currentNoteIndex++;
+    }
+    
+    moods.push({ id: Date.now() - i*10000, d: dateStr, v: val, note: note });
+  }
+  return moods;
+};
+
+const INIT_MOODS = generateHistoricalMoods();
 
 
 // --- GLOBAL HELPER ---
@@ -838,23 +882,52 @@ function TaskModal({onClose, onSave, taskToEdit}) {
 }
 
 
-function MoodModal({onClose,onAdd}) {
-  const [sel,setSel]=useState(2);
-  const today=new Date().toISOString().split("T")[0];
+function MoodModal({onClose, onAdd, defaultNote = "", forced = false}) {
+  const [sel,setSel] = useState(2);
+  const [note, setNote] = useState(defaultNote);
+  const today = new Date();
+  const dateStr = today.toISOString().split("T")[0];
+  const timeStr = today.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-t-3xl shadow-2xl p-6 w-full max-w-sm pb-10" onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-[#1A2F22] flex items-center gap-2 text-base"><Smile size={17} className="text-[#2D9E6B]"/>Zarejestruj nastrój</h3>
-          <button onClick={onClose}><X size={17} className="text-[#9FB5AD]"/></button>
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#1A2F22]/60 backdrop-blur-sm p-4" onClick={!forced ? onClose : undefined}>
+      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/20 animate-in zoom-in-95 duration-300" onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-bold text-[#1A2F22] text-xl">Zarejestruj swój nastrój</h3>
+          {!forced && <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={20} className="text-[#9FB5AD]"/></button>}
         </div>
-        <div className="flex justify-between mb-4 px-2">
+        
+        <p className="text-sm font-bold text-[#1A2F22] mb-3">Jak się czujesz?</p>
+        
+        <div className="flex gap-3 mb-6">
+          <div className="flex-1 opacity-50 cursor-not-allowed" title="Opcja zablokowana w tej wersji">
+            <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-1">W tym momencie</p>
+            <div className="px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm flex justify-between items-center text-gray-500">
+              Dzisiaj <ChevronDown size={14}/>
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-1">Godzina</p>
+            <div className="px-4 py-3 bg-[#F5EFE6] border border-[#E8DDD0] rounded-xl text-sm font-bold text-[#1E5C36] flex items-center gap-2">
+              <Clock size={14}/> {timeStr}
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-3">Twój nastrój</p>
+        <div className="flex justify-between mb-2">
           {EMOJIS.map((e,i)=>(
-            <button key={i} onClick={()=>setSel(i)} className={`w-11 h-11 text-2xl rounded-2xl transition-all duration-150 ${sel===i?"ring-2 ring-[#1E5C36] bg-[#E8F4ED] scale-110 shadow-md":"hover:bg-[#F5EFE6] hover:scale-105"}`}>{e}</button>
+            <button key={i} onClick={()=>setSel(i)} className={`w-12 h-12 text-2xl rounded-2xl transition-all duration-150 ${sel===i?"ring-2 ring-[#1E5C36] bg-[#E8F4ED] scale-110 shadow-md":"hover:bg-[#F5EFE6] hover:scale-105"}`}>{e}</button>
           ))}
         </div>
-        <p className="text-center text-sm font-semibold text-[#1E5C36] mb-5">{MOOD_L[sel]}</p>
-        <button onClick={()=>{onAdd({id:Date.now(),d:today,v:sel});onClose();}} className="w-full py-3.5 bg-[#1E5C36] text-white rounded-2xl font-bold hover:bg-[#164a2c] transition-all shadow-lg">Zapisz</button>
+        <p className="text-center text-xs font-bold text-[#1E5C36] mb-6">{MOOD_L[sel]}</p>
+        
+        <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-2">Notatka z dnia (opcjonalnie)</p>
+        <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Zapisz, co wpłynęło na Twój nastrój (np. ciężki wykład, sukces)..." rows={2} className="w-full px-4 py-3 rounded-xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] bg-white resize-none mb-6 text-[#1A2F22] leading-relaxed"/>
+
+        <button onClick={()=>{onAdd({id:Date.now(),d:dateStr,v:sel,note});if(!forced)onClose();}} className="w-full py-4 bg-[#1E5C36] text-white rounded-2xl font-bold text-sm hover:bg-[#164a2c] transition-all shadow-xl shadow-green-900/20 active:scale-[0.98]">
+          Zapisz i kontynuuj
+        </button>
       </div>
     </div>
   );
@@ -1285,7 +1358,132 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
     </div>
   );
 }
+
+// ═══════════════════════════════════════════════════
+//  MOOD VIEW (ZAAWANSOWANA ANALITYKA NASTROJU)
+// ═══════════════════════════════════════════════════
+function MoodView({ moods, onOpenModal }) {
+  const H = { fontFamily: "'Lora', serif" };
+  const [filter, setFilter] = useState("Kwartał");
+  const [hovered, setHovered] = useState(null);
+
+  let daysToShow = 90;
+  if (filter === "Tydzień") daysToShow = 7;
+  if (filter === "Miesiąc") daysToShow = 30;
+
+  // 1. Ustawiamy punkt odniesienia na "dzisiaj"
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const width = 1200; 
+  const height = 400;
+  // 2. Dodajemy marginesy wewnętrzne, żeby kropki nie przyklejały się do krawędzi
+  const paddingX = 40; 
+  const innerWidth = width - 2 * paddingX;
+
+  // 3. Mapujemy punkty ściśle według różnicy w dniach (idealna skala czasu)
+  const points = [];
+  moods.forEach(m => {
+    const d = new Date(m.d);
+    d.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((today - d) / (1000 * 60 * 60 * 24));
+    
+    // Rysujemy tylko te kropki, które mieszczą się w przedziale filtra
+    if (diffDays >= 0 && diffDays < daysToShow) {
+      const x = paddingX + (1 - diffDays / (daysToShow - 1)) * innerWidth;
+      const y = height - 20 - (m.v / 9) * (height - 60);
+      points.push({ x, y, data: m, diffDays });
+    }
+  });
+
+  // Sortujemy od lewej do prawej, żeby linia się nie łamała
+  points.sort((a, b) => b.diffDays - a.diffDays);
+
+  const linePath = points.length > 0 ? `M ${points.map(p => `${p.x},${p.y}`).join(" L ")}` : "";
   
+  // Obliczamy krawędzie cienia pod wykresem
+  const firstX = points.length > 0 ? points[0].x : paddingX;
+  const lastX = points.length > 0 ? points[points.length - 1].x : width - paddingX;
+  const areaPath = points.length > 0 ? `${linePath} L ${lastX},${height} L ${firstX},${height} Z` : "";
+  
+  const hitRadius = Math.min(25, Math.max(6, (width / daysToShow) / 2));
+
+  return (
+    <div className="p-10 max-w-7xl mx-auto w-full pb-32 animate-in fade-in duration-500">
+      <header className="mb-12 flex justify-between items-end">
+        <div>
+          <h1 style={H} className="text-4xl font-bold text-[#1A2F22] mb-4">Monitor nastroju</h1>
+          <p className="text-[#5A7368] text-sm max-w-xl">Śledź swoje samopoczucie w relacji do obowiązków akademickich.</p>
+        </div>
+        <button onClick={onOpenModal} className="px-6 py-3 bg-[#1E5C36] text-white rounded-xl font-bold shadow-lg active:scale-95 transition-all">
+          Zarejestruj swój nastrój
+        </button>
+      </header>
+
+      {/* WYKRES (Teraz samodzielny, bez sekcji AI) */}
+      <div className="bg-white rounded-[2.5rem] border border-[#E8DDD0] p-10 shadow-sm relative overflow-hidden">
+        <div className="flex justify-between items-center mb-12">
+          <h3 className="font-bold text-[#1A2F22]">Wykres Twojego nastroju w czasie</h3>
+          <div className="flex items-center gap-1 bg-[#F5EFE6] p-1 rounded-xl">
+            {["Dzień", "Tydzień", "Miesiąc", "Kwartał", "Rok"].map(f => {
+              const isDisabled = f === "Rok" || f === "Dzień";
+              return (
+                <button key={f} onClick={() => !isDisabled && setFilter(f)} disabled={isDisabled}
+                  className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${isDisabled ? "text-gray-400 cursor-not-allowed opacity-40" : filter === f ? "bg-white text-[#1A2F22] shadow-sm" : "text-[#5A7368] hover:text-[#1A2F22]"}`}>
+                  {f}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="relative w-full h-[400px]">
+          <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2D9E6B" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#2D9E6B" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+            {[0, 2, 4, 6, 8, 9].map(level => (
+              <line key={level} x1="0" y1={height - 20 - (level/9)*(height-60)} x2={width} y2={height - 20 - (level/9)*(height-60)} stroke="#F5EFE6" strokeWidth="2" strokeDasharray="5,5" />
+            ))}
+            
+            {points.length > 0 && (
+              <>
+                <path d={areaPath} fill="url(#chartGradient)" />
+                <path d={linePath} fill="none" stroke="#2D9E6B" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+              </>
+            )}
+
+            {points.map((p, i) => (
+              <g key={i}>
+                <circle cx={p.x} cy={p.y} r={4} fill="#2D9E6B" />
+                {hovered?.id === p.data.id && <circle cx={p.x} cy={p.y} r={8} fill="#1E5C36" className="animate-ping opacity-30" />}
+                <circle cx={p.x} cy={p.y} r={hitRadius} fill="transparent" className="cursor-pointer" onMouseEnter={() => setHovered(p.data)} onMouseLeave={() => setHovered(null)} />
+              </g>
+            ))}
+          </svg>
+
+          {hovered && (
+            <div className="absolute z-50 bg-white border border-[#2D9E6B]/30 shadow-2xl rounded-2xl p-4 w-72 pointer-events-none transform -translate-x-1/2 -translate-y-[115%]" 
+                 style={{ left: `${(points.find(p => p.data.id === hovered.id)?.x / width) * 100}%`, top: `${(points.find(p => p.data.id === hovered.id)?.y / height) * 100}%` }}>
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">{EMOJIS[hovered.v]}</span>
+                  <span className="text-xs font-bold text-[#1E5C36] bg-[#E8F4ED] px-2 py-1 rounded-md">{MOOD_L[hovered.v]}</span>
+                </div>
+                <span className="text-[10px] font-black text-[#9FB5AD]">{hovered.d}</span>
+              </div>
+              <p className="text-xs text-[#5A7368] mt-2 leading-relaxed italic border-l-2 border-[#E8DDD0] pl-2">"{hovered.note || "Brak notatki."}"</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WarningView({loading, user}) {
   const H={fontFamily:"'Lora',serif"};
   if(loading) return <SkeletonScreen/>;
@@ -1372,15 +1570,40 @@ export default function App() {
   const {ts, add, rm} = useToasts();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  const [hasPromptedToday, setHasPromptedToday] = useState(false);
+  const [hasPrompted5h, setHasPrompted5h] = useState(false);
+
   useEffect(() => {
     if(view === "landing" && user) setView("app");
   }, [user, view]);
 
-  const handleNav = (tab) => {
-    if(tab === "mood") {
-      setShowMoodModal(true);
-      return;
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const moodToday = moods.find(m => m.d === todayStr);
+
+    // 1. WYCHWYĆ START DNIA (Lub odświeżenie)
+    if (!moodToday && !hasPromptedToday) {
+      setTimeout(() => {
+        setShowMoodModal(true);
+        setHasPromptedToday(true);
+      }, 2000); // Małe opóźnienie dla efektu
     }
+
+    // 2. WYCHWYĆ 5 GODZIN PRACY (300 MINUT)
+    const scheduled = tasks.filter(t => t.sMins !== null);
+    const completedMinutes = scheduled
+      .filter(t => t.done)
+      .reduce((sum, t) => sum + (parseInt(t.duration) || 0), 0);
+
+    if (completedMinutes >= 300 && !hasPrompted5h) {
+      add("Pracujesz już intensywnie ponad 5 godzin. Jak się czujesz?");
+      setShowMoodModal(true);
+      setHasPrompted5h(true);
+    }
+  }, [tasks, moods, hasPromptedToday, hasPrompted5h]);
+
+ const handleNav = (tab) => {
+    // Usunęliśmy stąd blokadę, która otwierała Modal zamiast widoku
     setIsLoading(true);
     setActiveTab(tab);
     setTimeout(() => setIsLoading(false), 800);
@@ -1532,7 +1755,23 @@ export default function App() {
   };
 
   const addMood = (m) => {
-    setMoods(p => [...p, m]);
+    setMoods(prev => {
+      // Pobieramy dzisiejszą datę w formacie YYYY-MM-DD
+      const todayStr = new Date().toISOString().split("T")[0];
+      
+      // Szukamy, czy dzisiaj już wprowadzono nastrój
+      const existingIndex = prev.findIndex(mood => mood.d === todayStr);
+      
+      if (existingIndex >= 0) {
+        // Jeśli tak -> aktualizujemy istniejącą kropkę (zmieniamy wartość i notatkę)
+        const newMoods = [...prev];
+        newMoods[existingIndex] = { ...newMoods[existingIndex], v: m.v, note: m.note };
+        return newMoods;
+      } else {
+        // Jeśli nie -> dodajemy nową kropkę
+        return [...prev, m];
+      }
+    });
     add("Twój nastrój został zapisany.");
   };
 
@@ -1592,6 +1831,13 @@ export default function App() {
                   onFocusTask={setFocusedTask}
                   onEditTask={handleEditTask}
                   loading={isLoading} 
+                />
+              )}
+
+              {activeTab === "mood" && (
+                <MoodView 
+                  moods={moods} 
+                  onOpenModal={() => setShowMoodModal(true)} 
                 />
               )}
               {activeTab === "warning" && <WarningView loading={isLoading} user={user} />}
