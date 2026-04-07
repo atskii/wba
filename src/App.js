@@ -100,6 +100,47 @@ const INIT_MOODS = [
   {id:1,d:"2025-10-13",v:2},{id:2,d:"2025-10-14",v:3},
 ];
 
+
+// --- GLOBAL HELPER ---
+const checkIsToday = (textString) => {
+  if (!textString) return false;
+  const txt = textString.toLowerCase();
+  const now = new Date();
+  const selYear = now.getFullYear();
+  const selMonth = now.getMonth() + 1;
+  const selDay = now.getDate();
+  const selDateOnly = new Date(selYear, now.getMonth(), selDay); 
+  
+  const endMatch = txt.match(/🛑 do (\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (endMatch) {
+      const endDate = new Date(parseInt(endMatch[1]), parseInt(endMatch[2]) - 1, parseInt(endMatch[3]));
+      if (selDateOnly > endDate) return false; 
+  }
+
+  const startMatch = textString.match(/\((\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})\)/);
+  if (startMatch && (txt.includes("codziennie") || txt.includes("co tydzień") || txt.includes("w dni robocze"))) {
+      const startDate = new Date(parseInt(startMatch[3]), parseInt(startMatch[2]) - 1, parseInt(startMatch[1]));
+      if (selDateOnly < startDate) return false; 
+  }
+
+  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; 
+  const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
+
+  if (txt.includes("codziennie") || txt.includes("każdego dnia")) return true;
+  if (txt.includes("w dni robocze") && dayOfWeek >= 0 && dayOfWeek <= 4) return true;
+  if (txt.includes("co tydzień") || txt.includes("co tydzien")) {
+    if (txt.includes(daysArr[dayOfWeek])) return true;
+    if (dayOfWeek === 5 && txt.includes("sb")) return true;
+  }
+
+  const ymd = textString.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (ymd && parseInt(ymd[1]) === selYear && parseInt(ymd[2]) === selMonth && parseInt(ymd[3]) === selDay) return true;
+
+  const dmy = textString.match(/(\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})/);
+  if (dmy && parseInt(dmy[3]) === selYear && parseInt(dmy[2]) === selMonth && parseInt(dmy[1]) === selDay) return true;
+
+  return false;
+};
 // ═══════════════════════════════════════════════════
 //  STORAGE & TOASTS
 // ═══════════════════════════════════════════════════
@@ -859,164 +900,60 @@ function StreakPlant({ tasks }) {
 
 
 // ═══════════════════════════════════════════════════
-//  DASHBOARD VIEW (Z ODŚWIEŻONYM MENU W BACKLOGU - TYLKO KOSZ)
+//  DASHBOARD VIEW (ZAMROŻONY PLAN Z GUZIKIEM GENERUJ)
 // ═══════════════════════════════════════════════════
-function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete,onAlert,onFocusTask,loading})  {
-  const H={fontFamily:"'Lora',serif"};
+function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onDelete, onAlert, onFocusTask, loading, onGeneratePlan}) {
+  const H = {fontFamily: "'Lora', serif"};
   const [showBacklog, setShowBacklog] = useState(false);
   
   if(loading) return <SkeletonScreen/>;
 
-  const checkIsToday = (textString) => {
-    if (!textString) return false;
-    const txt = textString.toLowerCase();
-    const now = new Date();
-    const selYear = now.getFullYear();
-    const selMonth = now.getMonth() + 1;
-    const selDay = now.getDate();
-    const selDateOnly = new Date(selYear, now.getMonth(), selDay); 
-    
-    const endMatch = txt.match(/🛑 do (\d{4})-(\d{1,2})-(\d{1,2})/);
-    if (endMatch) {
-        const endDate = new Date(parseInt(endMatch[1]), parseInt(endMatch[2]) - 1, parseInt(endMatch[3]));
-        if (selDateOnly > endDate) return false; 
-    }
-
-    const startMatch = textString.match(/\((\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})\)/);
-    if (startMatch && (txt.includes("codziennie") || txt.includes("co tydzień") || txt.includes("w dni robocze"))) {
-        const startDate = new Date(parseInt(startMatch[3]), parseInt(startMatch[2]) - 1, parseInt(startMatch[1]));
-        if (selDateOnly < startDate) return false; 
-    }
-
-    const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; 
-    const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
-
-    if (txt.includes("codziennie") || txt.includes("każdego dnia")) return true;
-    if (txt.includes("w dni robocze") && dayOfWeek >= 0 && dayOfWeek <= 4) return true;
-    if (txt.includes("co tydzień") || txt.includes("co tydzien")) {
-      if (txt.includes(daysArr[dayOfWeek])) return true;
-      if (dayOfWeek === 5 && txt.includes("sb")) return true;
-    }
-
-    const ymd = textString.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if (ymd && parseInt(ymd[1]) === selYear && parseInt(ymd[2]) === selMonth && parseInt(ymd[3]) === selDay) return true;
-
-    const dmy = textString.match(/(\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})/);
-    if (dmy && parseInt(dmy[3]) === selYear && parseInt(dmy[2]) === selMonth && parseInt(dmy[1]) === selDay) return true;
-
-    return false;
-  };
-
-  const todayTasks = tasks;
-  const timelineStart = 6; 
-  const dayLimitMins = 21 * 60; 
-
-  const lockedBlocks = [];
-  todayTasks.forEach(t => {
-    if (t.isLocked && t.t && checkIsToday(t.t)) {
-      const match = t.t.match(/(\d{1,2}):(\d{2})/);
-      if (match) {
-        const startMins = parseInt(match[1]) * 60 + parseInt(match[2]);
-        const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
-        const duration = durMatch ? parseInt(durMatch[1]) : 60;
-        lockedBlocks.push({ ...t, startMins, endMins: startMins + duration });
-      }
-    }
-  });
-  lockedBlocks.sort((a, b) => a.startMins - b.startMins);
-
-  const scheduled = [];
-  const backlog = [];
-  let currentPointer = timelineStart * 60;
-
-  const flexTasks = [...todayTasks]
-    .filter(t => !t.isLocked || !t.t.match(/(\d{1,2}):(\d{2})/))
-    .filter(t => !(t.isBuffer && t.done)) 
-    .sort((a, b) => {
-      if (a.done && !b.done) return -1;
-      if (!a.done && b.done) return 1;
-      if (a.done && b.done) return a.id - b.id;
-      if (a.isBuffer && !b.isBuffer) return -1;
-      if (!a.isBuffer && b.isBuffer) return 1;
-      return 0; 
-    });
-
-  flexTasks.forEach(t => {
-    const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
-    let duration = durMatch ? parseInt(durMatch[1]) : (t.isBuffer ? 15 : 45);
-
-    const visualDuration = t.isBuffer ? Math.max(duration, 25) : Math.max(duration, 45);
-    const breakTime = t.isBuffer ? 0 : 5; 
-
-    const neededSpace = visualDuration + breakTime;
-    let fits = false;
-
-    while (!fits) {
-      const collision = lockedBlocks.find(b => 
-        (currentPointer < b.endMins && (currentPointer + neededSpace) > b.startMins)
-      );
-
-      if (collision) {
-        currentPointer = collision.endMins + 5; 
-      } else {
-        fits = true;
-      }
-    }
-
-    const endPos = currentPointer + duration; 
-    const visualEndPos = currentPointer + visualDuration; 
-
-    if (visualEndPos <= dayLimitMins) {
-      scheduled.push({ ...t, startMins: currentPointer, endMins: endPos, visualEndMins: visualEndPos });
-      currentPointer = visualEndPos + breakTime; 
-    } else {
-      backlog.push(t);
-    }
-  });
-
-  const allOnTimeline = [...lockedBlocks, ...scheduled].sort((a, b) => a.startMins - b.startMins);
+  const timelineStart = 6;
+  const scheduled = tasks.filter(t => t.sMins !== null && t.sMins !== undefined).sort((a,b) => a.sMins - b.sMins);
+  
+  // Zabezpieczony Backlog (tylko na dziś)
+  const backlog = tasks.filter(t => 
+    (t.sMins === null || t.sMins === undefined) && 
+    (!t.isLocked || !t.t || checkIsToday(t.t)) 
+  );
 
   const timelineWithGaps = [];
-  allOnTimeline.forEach((t, i) => {
+  scheduled.forEach((t, i) => {
     timelineWithGaps.push(t);
-    if (i < allOnTimeline.length - 1) {
-      const currEnd = t.visualEndMins || t.endMins;
-      const nextStart = allOnTimeline[i+1].startMins;
+    if (i < scheduled.length - 1) {
+      const currEnd = Math.max(t.eMins, t.sMins + (t.duration ? parseInt(t.duration) : 45));
+      const nextStart = scheduled[i+1].sMins;
       const gap = nextStart - currEnd;
-      
       if (gap >= 15) {
-        timelineWithGaps.push({
-          id: `auto-gap-${i}`,
-          isVisualGap: true,
-          title: "Czas na regenerację",
-          duration: `${gap} min`,
-          startMins: currEnd,
-          endMins: nextStart
-        });
+        timelineWithGaps.push({ id: `gap-${i}`, isVisualGap: true, title: "Czas na regenerację", duration: `${gap} min`, sMins: currEnd, eMins: nextStart });
       }
     }
   });
 
-  const lastTaskMins = allOnTimeline.length > 0 ? allOnTimeline[allOnTimeline.length - 1].endMins : (16*60);
+  const lastTaskMins = scheduled.length > 0 ? scheduled[scheduled.length - 1].eMins : (16*60);
   const timelineEndHour = Math.max(18, Math.ceil(lastTaskMins / 60) + 1);
   const hours = Array.from({ length: timelineEndHour - timelineStart + 1 }, (_, i) => timelineStart + i);
-
-  const minsToRem = (mins) => (mins / 60) * 8; 
+  const minsToRem = (mins) => (mins / 60) * 8;
   const formatTime = (mins) => `${Math.floor(mins/60)}:${(mins%60).toString().padStart(2,'0')}`;
 
   return (
     <div className="p-8 max-w-6xl mx-auto w-full pb-32">
       <div className="flex items-center justify-between mb-12">
         <h1 style={H} className="text-4xl font-bold text-[#1A2F22] tracking-tight">Dzisiejsze zadania</h1>
-        <button onClick={onOpenTaskModal} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8DDD0] text-[#1A2F22] rounded-xl text-sm font-bold hover:bg-[#F5EFE6] hover:border-[#2D9E6B] transition-all shadow-sm active:scale-95">
-          Dodaj zadanie <Plus size={18}/>
-        </button>
+        <div className="flex gap-3">
+          {/* NOWY GUZIK GENEROWANIA */}
+          <button onClick={onGeneratePlan} className="flex items-center gap-2 px-5 py-2.5 bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]/30 rounded-xl text-sm font-bold hover:bg-[#2D9E6B] hover:text-white transition-all shadow-sm active:scale-95">
+            <RefreshCw size={18}/> Generuj plan
+          </button>
+          <button onClick={onOpenTaskModal} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8DDD0] text-[#1A2F22] rounded-xl text-sm font-bold hover:bg-[#F5EFE6] hover:border-[#2D9E6B] transition-all shadow-sm active:scale-95">
+            Dodaj zadanie <Plus size={18}/>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 items-start">
         <div className="xl:col-span-8 relative">
           <div className="absolute left-[3.25rem] top-2 bottom-0 border-l-2 border-dashed border-[#C4BBAF] z-0"></div>
-
           <div className="relative" style={{ height: `${minsToRem((timelineEndHour - timelineStart) * 60)}rem` }}>
             {hours.map((h, i) => (
               <div key={h} className="absolute left-0 flex items-center w-full" style={{ top: `${minsToRem(i * 60)}rem` }}>
@@ -1026,17 +963,13 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
             ))}
 
             {timelineWithGaps.map(t => {
-              const topRem = minsToRem(t.startMins - (timelineStart * 60));
-              const visualEnd = t.visualEndMins || t.endMins;
-              const heightRem = minsToRem(visualEnd - t.startMins);
+              const topRem = minsToRem(t.sMins - (timelineStart * 60));
+              const durMins = t.duration ? parseInt(t.duration) : 45;
+              const heightRem = minsToRem(Math.max(durMins, 45));
               
               if (t.isVisualGap) {
                 return (
-                  <div 
-                    key={t.id} 
-                    className="absolute left-20 right-0 flex items-center justify-center z-10 pointer-events-none" 
-                    style={{ top: `${topRem}rem`, height: `${heightRem}rem` }}
-                  >
+                  <div key={t.id} className="absolute left-20 right-0 flex items-center justify-center z-10 pointer-events-none" style={{ top: `${topRem}rem`, height: `${minsToRem(t.eMins - t.sMins)}rem` }}>
                     <div className="w-full border-t-2 border-dashed border-[#2D9E6B]/30 flex items-center justify-center relative">
                       <div className="absolute bg-[#FAFAFA] px-4 py-1.5 rounded-full border border-[#2D9E6B]/20 flex items-center gap-2 shadow-sm">
                         <Leaf size={12} className="text-[#2D9E6B]"/>
@@ -1047,141 +980,62 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
                 );
               }
 
-              if (t.isBuffer) {
-                return (
-                  <div 
-                    key={t.id} 
-                    className={`absolute left-20 right-0 flex items-center gap-4 z-20 hover:z-50 group transition-all duration-300 px-5 py-3 rounded-2xl bg-gradient-to-r shadow-sm border ${t.done ? 'from-gray-100 to-gray-50 opacity-60 grayscale border-gray-200' : 'from-[#E8F4ED] to-[#FBFFF1] border-[#2D9E6B]/30'}`} 
-                    style={{ top: `${topRem + 0.1}rem`, height: `${heightRem - 0.2}rem`, minHeight: '3.5rem' }}
-                  >
-                    <div className={`w-9 h-9 flex-shrink-0 rounded-full flex items-center justify-center shadow-sm border ${t.done ? 'bg-gray-200 text-gray-500 border-gray-300' : 'bg-white text-[#2D9E6B] border-[#2D9E6B]/20'}`}>
-                      <Leaf size={16}/>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                       <p className={`text-sm font-bold truncate ${t.done ? 'text-gray-500 line-through' : 'text-[#1E5C36]'}`}>{t.title}</p>
-                       {!t.done && <p className="text-[10px] font-bold text-[#5A7368] truncate mt-0.5">{t.desc}</p>}
-                    </div>
-                    <div className="ml-auto flex items-center gap-3 pl-2">
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${t.done ? 'text-gray-400' : 'text-[#2D9E6B]'}`}>{t.duration}</span>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} 
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all opacity-0 group-hover:opacity-100 ${t.done ? 'bg-[#5A7368] text-white' : 'bg-white text-[#1E5C36] border border-[#2D9E6B]'}`}
-                      >
-                        <Check size={14} className={t.done ? "" : "ml-0.5"}/>
-                      </button>
-                    </div>
-                  </div>
-                );
-              }
-
               return (
-                <div 
-                  key={t.id} 
-                  onClick={() => onEditTask(t)}
-                  className={`absolute left-20 right-0 rounded-2xl p-5 shadow-sm border z-20 hover:z-50 transition-all cursor-pointer group flex flex-col justify-center
-                    ${t.done
-                      ? 'bg-gray-50 border-gray-200 opacity-60 grayscale hover:opacity-80'
-                      : 'bg-white border-[#E8DDD0] hover:shadow-xl hover:border-[#2D9E6B] hover:bg-[#FBFFF1] hover:-translate-y-0.5 active:scale-[0.99]'}`}
-                  style={{ top: `${topRem + 0.2}rem`, height: `${heightRem - 0.4}rem`, minHeight: '5.5rem' }}
-                >
+                <div key={t.id} onClick={() => onEditTask(t)} className={`absolute left-20 right-0 rounded-2xl p-5 shadow-sm border z-20 hover:z-50 transition-all cursor-pointer group flex flex-col justify-center ${t.done ? 'bg-gray-50 border-gray-200 opacity-60 grayscale hover:opacity-80' : 'bg-white border-[#E8DDD0] hover:shadow-xl hover:border-[#2D9E6B] hover:bg-[#FBFFF1] hover:-translate-y-0.5 active:scale-[0.99]'}`} style={{ top: `${topRem + 0.2}rem`, height: `${heightRem - 0.4}rem`, minHeight: '5.5rem' }}>
                   <div className="flex justify-between items-start h-full relative">
-                    
                     <div className="flex gap-4">
                       <div className={`mt-1 flex-shrink-0 ${t.done ? 'text-gray-400' : t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
                         <Star size={22} fill="currentColor" strokeWidth={1} />
                       </div>
                       <div>
                         <h4 className={`text-base font-bold transition-colors pr-32 ${t.done ? 'line-through text-gray-500' : 'text-[#1A2F22] group-hover:text-[#1E5C36]'}`}>{t.title}</h4>
-                        <p className={`text-xs font-bold mt-1 ${t.done ? 'text-gray-400' : 'text-[#5A7368]'}`}>{formatTime(t.startMins)} — {formatTime(t.endMins)}</p>
+                        <p className={`text-xs font-bold mt-1 ${t.done ? 'text-gray-400' : 'text-[#5A7368]'}`}>{formatTime(t.sMins)} — {formatTime(t.sMins + durMins)}</p>
                       </div>
                     </div>
-                    
                     <div className={`absolute top-0 right-0 flex items-center gap-1.5 transition-all z-30 ${t.done ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        {!t.done && (
-                          <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} title="Rozpocznij Głębokie Skupienie" className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all">
-                            <Play size={14} className="ml-0.5"/>
-                          </button>
-                        )}
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} title="Usuń zadanie" className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all">
-                          <Trash2 size={14}/>
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onToggle(t.id); }}
-                          title={t.done ? "Cofnij wykonanie" : "Zaznacz jako zrobione"}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all tracking-wider ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}
-                        >
-                          <Check size={14} className={t.done ? "" : "ml-0.5"}/>
-                        </button>
+                        {!t.done && <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Play size={14} className="ml-0.5"/></button>}
+                        <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Trash2 size={14}/></button>
+                        <button onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}><Check size={14}/></button>
                     </div>
-
-                    {t.isLocked && (
-                      <div
-                        title="Sztywny termin zablokowany w kalendarzu"
-                        className={`absolute bottom-0 left-0 flex items-center justify-center w-[22px] h-[22px] rounded border border-[#E8DDD0] bg-white shadow-sm z-30 transition-all ${t.done ? 'opacity-50' : ''}`}
-                      >
-                        <Lock size={12} strokeWidth={2.5} className="text-[#5A7368]" />
-                      </div>
-                    )}
-
+                    {t.isLocked && <div className={`absolute bottom-0 left-0 flex items-center justify-center w-[22px] h-[22px] rounded border border-[#E8DDD0] bg-white shadow-sm z-30 ${t.done ? 'opacity-50' : ''}`}><Lock size={12} strokeWidth={2.5} className="text-[#5A7368]" /></div>}
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-
-        <div className="xl:col-span-4 space-y-6 pt-16">
-          <StreakPlant tasks={tasks} />
-          <Journal onAlert={onAlert} />
-        </div>
+        <div className="xl:col-span-4 space-y-6 pt-16"><StreakPlant tasks={scheduled} /><Journal onAlert={onAlert} /></div>
       </div>
 
-      {/* BACKLOG (Zadania poza planem) */}
       {backlog.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-[100] flex justify-center p-4 pointer-events-none">
-          <div className="bg-white border-2 border-[#E8DDD0] shadow-2xl rounded-t-[2.5rem] w-full max-w-2xl p-6 pointer-events-auto transition-all animate-in slide-in-from-bottom">
+          <div className="bg-white border-2 border-[#E8DDD0] shadow-2xl rounded-t-[2.5rem] w-full max-w-2xl p-6 pointer-events-auto transition-all">
             <button onClick={() => setShowBacklog(!showBacklog)} className="w-full flex items-center justify-between mb-4 group">
               <div className="flex items-center gap-3">
-                <div className="bg-red-50 text-red-500 p-2 rounded-xl"><AlertCircle size={20}/></div>
+                <div className="bg-amber-50 text-amber-600 p-2 rounded-xl"><Plus size={20}/></div>
                 <div className="text-left">
                   <h3 className="font-bold text-[#1A2F22] text-sm">Zadania poza planem ({backlog.length})</h3>
-                  <p className="text-[10px] text-[#5A7368]">Te zadania nie zmieściły się w Twoim zdrowym limicie czasowym.</p>
+                  <p className="text-[10px] text-[#5A7368]">Oczekują na kliknięcie "Generuj plan".</p>
                 </div>
               </div>
-              <div className={`p-2 rounded-full bg-slate-50 transition-transform ${showBacklog ? 'rotate-180' : ''}`}>
-                <ChevronDown size={20} className="text-[#9FB5AD]"/>
-              </div>
+              <div className={`p-2 rounded-full bg-slate-50 transition-transform ${showBacklog ? 'rotate-180' : ''}`}><ChevronDown size={20}/></div>
             </button>
             {showBacklog && (
               <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {backlog.map(t => (
-                  <div key={t.id} className={`p-5 rounded-2xl border transition-all cursor-pointer group relative flex flex-col justify-between ${t.done ? 'bg-gray-50 border-gray-200 opacity-60 grayscale' : 'bg-[#F9FAFB] border-[#E8DDD0] hover:border-[#2D9E6B]'}`} onClick={() => onEditTask(t)} style={{minHeight: '5.5rem'}}>
+                  <div key={t.id} className="p-5 rounded-2xl border bg-[#F9FAFB] border-[#E8DDD0] hover:border-[#2D9E6B] transition-all cursor-pointer group relative flex flex-col justify-between" onClick={() => onEditTask(t)} style={{minHeight: '5.5rem'}}>
                     <div className="flex items-start gap-4 pr-28">
-                       <div className={`mt-0.5 flex-shrink-0 ${t.done ? 'text-gray-400' : t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                       <div className={`mt-0.5 flex-shrink-0 flex items-center gap-1 ${t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
                          <Star size={18} fill="currentColor" strokeWidth={1} />
+                         {/* WYKRZYKNIK JEŚLI ZABLOKOWANE ALE W BACKLOGU */}
+                         {t.isLocked && <span className="text-red-600 font-black text-xs animate-pulse">!</span>}
                        </div>
-                       
-                       <div className="flex flex-col gap-1.5">
-                         <div className="flex items-center gap-2">
-                           <span className={`text-sm font-bold ${t.done ? 'line-through text-gray-500' : 'text-[#1A2F22]'}`}>{t.title}</span>
-                         </div>
-                         <span className={`text-[10px] font-bold ${t.done ? 'text-gray-400' : 'text-[#5A7368]'}`}>{t.duration}</span>
-                       </div>
+                       <div className="flex flex-col gap-1.5"><span className="text-sm font-bold text-[#1A2F22]">{t.title}</span><span className="text-[10px] font-bold text-[#5A7368]">{t.duration}</span></div>
                     </div>
-                    
-                  {/* ZMIENIONE MENU AKCJI W BACKLOGU (Tylko usunięcie na hover) */}
-                    <div className={`flex transition-all absolute top-1/2 -translate-y-1/2 right-6 z-30 opacity-0 group-hover:opacity-100`}>
-                      <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} title="Usuń" className="w-9 h-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm transition-all">
-                        <Trash2 size={16}/>
-                      </button>
+                    <div className="flex transition-all absolute top-1/2 -translate-y-1/2 right-6 z-30 opacity-0 group-hover:opacity-100">
+                      <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="w-9 h-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm"><Trash2 size={16}/></button>
                     </div>
-
-                    {t.isLocked && (
-                      <div title="Sztywny termin zablokowany w kalendarzu" className="absolute bottom-4 left-5 z-30 flex items-center justify-center w-[18px] h-[18px] rounded border border-[#E8DDD0] bg-white shadow-sm">
-                        <Lock size={10} strokeWidth={2.5} className="text-[#5A7368]" />
-                      </div>
-                    )}
-
+                    {t.isLocked && <div title="Sztywny termin zablokowany w kalendarzu" className="absolute bottom-4 left-5 z-30 flex items-center justify-center w-[18px] h-[18px] rounded border border-[#E8DDD0] bg-white shadow-sm"><Lock size={10} strokeWidth={2.5} className="text-[#5A7368]" /></div>}
                   </div>
                 ))}
               </div>
@@ -1194,7 +1048,7 @@ function DashboardView({tasks,moods,onToggle,onOpenTaskModal,onEditTask,onDelete
 }
 
 // ═══════════════════════════════════════════════════
-//  CALENDAR VIEW (MINIMALISTYCZNA LISTA ZADAŃ)
+//  CALENDAR VIEW (ZADANIA ZOSTAJĄ NA MIEJSCU PO PRAWEJ)
 // ═══════════════════════════════════════════════════
 function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, onEditTask, loading })  {
   const H = { fontFamily: "'Lora', serif" };
@@ -1244,17 +1098,10 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
     return false;
   };
 
-  const timelineTasks = tasks.filter(t => !t.isBuffer && (isSameDate(t.t) || (!t.isLocked && isSameDate(t.deadline))));
+  const timelineTasks = tasks.filter(t => (isSameDate(t.t) || (!t.isLocked && isSameDate(t.deadline))));
   
   const queueTasks = tasks
-    .filter(t => !t.isBuffer)
-    .filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => {
-      // Zrobione zadania spadają na sam dół listy
-      if (a.done && !b.done) return 1;
-      if (!a.done && b.done) return -1;
-      return 0;
-    });
+    .filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex h-screen bg-white">
@@ -1350,7 +1197,7 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
             return (
               <div 
                 key={t.id} 
-                onClick={() => onEditTask(t)} // Cała karta służy do edycji
+                onClick={() => onEditTask(t)} 
                 className={`bg-white p-5 rounded-[2rem] border shadow-sm transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-lg ${t.done ? 'opacity-60 grayscale border-gray-200' : (deadlineToday ? 'border-red-200 hover:border-red-400' : 'border-[#E8DDD0] hover:border-[#2D9E6B]')}`}
               >
                 <div className="flex justify-between items-start mb-3">
@@ -1358,13 +1205,11 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
                     <PBadge p={t.p}/>
                     {t.isLocked && <Lock size={12} className="text-[#5A7368]" title="Zablokowane w kalendarzu"/>}
                   </div>
-                  {/* Znaczki informacyjne */}
                   {deadlineToday && !t.done && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg border border-red-100">W tym dniu!</span>}
                   {!deadlineToday && t.deadline && !t.done && <span className="text-[10px] font-bold text-[#5A7368] bg-[#F5EFE6] px-2 py-1 rounded-lg">Dl: {t.deadline.split(' o ')[0]}</span>}
                   {t.done && <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-lg border border-gray-200">Zrobione</span>}
                 </div>
                 
-                {/* Tytuł zadania - przekreślony, jeśli ukończone */}
                 <h4 className={`text-sm font-bold mb-3 pr-4 transition-colors ${t.done ? 'line-through text-gray-500' : 'text-[#1A2F22] group-hover:text-[#1E5C36]'}`}>{t.title}</h4>
                 
                 <div className="flex items-center gap-3">
@@ -1373,8 +1218,6 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
                   </span>
                   
                   <div className="ml-auto flex gap-2">
-                    {/* Przycisk usuwania pojawia się tylko przy najeździe myszką na kartę */}
-                    {/* e.stopPropagation() sprawia, że kliknięcie w kosz NIE uruchamia edycji zadania */}
                     <button 
                       onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} 
                       title="Usuń zadanie" 
@@ -1400,7 +1243,6 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
     </div>
   );
 }
-
   
 function WarningView({loading}) {
   const H={fontFamily:"'Lora',serif"};
@@ -1473,12 +1315,12 @@ export default function App() {
     setTimeout(() => setIsLoading(false), 800);
   };
 
-  const sortSmartQueue = (tasksList) => {
+ const sortSmartQueue = (tasksList) => {
     const todayStr = new Date().toISOString().split("T")[0];
     const lastMood = moods.length > 0 ? moods[moods.length - 1].v : 2; 
 
     const getScore = (task) => {
-      if (task.done) return -1000;
+      // USUNIĘTO: Zrzucanie zrobionych zadań na dno. Teraz wynik zawsze jest taki sam!
       let score = 0;
       
       if (task.p === "wysoki") score += 30;
@@ -1499,43 +1341,85 @@ export default function App() {
       return score;
     };
 
-    return [...tasksList].sort((a, b) => getScore(b) - getScore(a));
+    return [...tasksList].sort((a, b) => {
+      const diff = getScore(b) - getScore(a);
+      if (diff !== 0) return diff;
+      return a.id - b.id; // Zapewnia absolutną stabilność kolejności przy remisach
+    });
+  };
+
+  // --- NOWA LOGIKA: RĘCZNE GENEROWANIE PLANU ---
+  const generatePlan = () => {
+    const timelineStart = 6; 
+    const dayLimitMins = 21 * 60; 
+    let currentPointer = timelineStart * 60;
+
+    // 1. Wyodrębniamy sztywne bloki (tylko na dzisiaj)
+    const lockedBlocks = tasks
+      .filter(t => t.isLocked && t.t && checkIsToday(t.t))
+      .map(t => {
+        const match = t.t.match(/(\d{1,2}):(\d{2})/);
+        const startMins = match ? parseInt(match[1]) * 60 + parseInt(match[2]) : 0;
+        const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
+        const duration = durMatch ? parseInt(durMatch[1]) : 60;
+        return { ...t, sMins: startMins, eMins: startMins + duration };
+      })
+      .sort((a, b) => a.sMins - b.sMins);
+
+    // 2. Szeregiem ustawiamy resztę zadań (flex)
+    const updatedTasks = tasks.map(t => ({ ...t, sMins: null, eMins: null })); // Resetujemy stare pozycje
+
+    // Najpierw przypisujemy pozycje zablokowanym
+    lockedBlocks.forEach(lb => {
+      const idx = updatedTasks.findIndex(t => t.id === lb.id);
+      updatedTasks[idx].sMins = lb.sMins;
+      updatedTasks[idx].eMins = lb.eMins;
+    });
+
+    // Teraz wypełniamy luki zadaniami z kolejki (flex)
+    const flexTasks = updatedTasks
+      .filter(t => !t.sMins && !t.done)
+      .sort((a, b) => {
+         if (a.p === "wysoki" && b.p !== "wysoki") return -1;
+         if (a.p !== "wysoki" && b.p === "wysoki") return 1;
+         return 0;
+      });
+
+    flexTasks.forEach(t => {
+      const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
+      const duration = durMatch ? parseInt(durMatch[1]) : 45;
+      const visualDuration = Math.max(duration, 45);
+      
+      let fits = false;
+      while (!fits) {
+        const collision = lockedBlocks.find(b => 
+          (currentPointer < b.eMins && (currentPointer + visualDuration) > b.sMins)
+        );
+        if (collision) {
+          currentPointer = collision.eMins + 5; 
+        } else {
+          fits = true;
+        }
+      }
+
+      if (currentPointer + visualDuration <= dayLimitMins) {
+        const idx = updatedTasks.findIndex(ut => ut.id === t.id);
+        updatedTasks[idx].sMins = currentPointer;
+        updatedTasks[idx].eMins = currentPointer + duration;
+        currentPointer += (visualDuration + 5);
+      }
+    });
+
+    setTasks(updatedTasks);
+    add("Plan dnia został wygenerowany! ✨");
   };
 
   const toggleTask = (id) => {
-    const taskToToggle = tasks.find(t => t.id === id); 
-    const isCompleting = taskToToggle && !taskToToggle.done;
-    const isHard = taskToToggle && taskToToggle.difficulty >= 4;
-    const hasActiveBuffer = tasks.some(t => t.isBuffer && !t.done);
-
     setTasks(prevTasks => {
       let updated = prevTasks.map(t => t.id === id ? {...t, done: !t.done} : t);
-      
-      if (isCompleting && isHard && !hasActiveBuffer) {
-        const userActs = (user && user.prefs && user.prefs.length > 0) ? user.prefs : ["Odpoczynek dla umysłu"];
-        const randomAct = userActs[Math.floor(Math.random() * userActs.length)];
-
-        updated.push({
-            id: Date.now(),
-            title: `${randomAct} 🌿`,
-            cat: "zdrowie",
-            p: "wysoki", 
-            done: false,
-            duration: "15 min",
-            deadline: new Date().toISOString().split("T")[0],
-            difficulty: 1,
-            desc: "Świetna robota! To zadanie pochłonęło dużo energii. Wykorzystaj ten czas na regenerację.",
-            isLocked: false,
-            t: "",
-            isBuffer: true
-        });
-      }
+      // USUNIĘTO: Generowanie sztucznych przerw po wykonaniu trudnego zadania
       return sortSmartQueue(updated);
     });
-
-    if (isCompleting && isHard && !hasActiveBuffer) {
-       setTimeout(() => add("Zasłużona przerwa! Zobacz na Harmonogram.", "ok"), 600);
-    }
   };
   
   const saveTask = (t) => {
@@ -1601,7 +1485,7 @@ export default function App() {
           <main className="flex-1 overflow-y-auto relative bg-[#FAFAFA]">
             {/* ZMIANA TUTAJ: W-full zamiast max-w-4xl aby zmieścić 3 kolumny */}
             <div className="w-full">
-              {activeTab === "dashboard" && (
+           {activeTab === "dashboard" && (
                 <DashboardView 
                  tasks={tasks}
                  moods={moods} 
@@ -1615,6 +1499,7 @@ export default function App() {
                     handleNav("warning");
                  }}
                  loading={isLoading}
+                 onGeneratePlan={generatePlan} /* <-- TO OŻYWIA GUZIK! */
                 />
               )}
               {activeTab === "calendar" && (
