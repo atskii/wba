@@ -72,11 +72,59 @@ const CONTACTS = [
     desc: "Wyłącznie w sytuacjach bezpośredniego zagrożenia życia lub zdrowia wymagających natychmiastowej interwencji służb." 
   },
 ];
-const EMOJIS = ["😫", "😩", "😟", "😕", "😐", "🤨", "🙂", "😊", "😄", "🤩"];
+const EMOJIS = ["😫", "😟", "😐", "🙂", "😊", "😄", "🤩"];
 const MOOD_L = [
-  "Tragedia", "Bardzo źle", "Źle", "Słabo", "Mogło być lepiej", 
-  "Neutralnie", "Dobrze", "Bardzo dobrze", "Świetnie", "Fantastycznie"
+  "Tragedia", "Źle", "Neutralnie", "Dobrze", "Bardzo dobrze", "Świetnie", "Fantastycznie"
 ];
+
+const generateHistoricalMoods = () => {
+  const moods = [];
+  const notes = [
+    "Sesja poprawkowa – 200 maili w skrzynce, przytłaczające.",
+    "Wpisane oceny do USOS – system o dziwo nie padł, ogromna ulga.",
+    "Dzień rektorski – nareszcie chwila na własne badania naukowe.",
+    "Seminarium magisterskie – studenci mają świetne tematy, to buduje!",
+    "Kolejne zebranie instytutu, nic konkretnego nie ustalono.",
+    "Udało się wysłać artykuł do recenzji, trzymam kciuki.",
+    "Znowu problem z rzutnikiem w sali 104...",
+    "Świetna dyskusja na dzisiejszym wykładzie z 3 rokiem.",
+    "Niespodziewane zastępstwo za kolegę. Brak czasu na obiadową przerwę.",
+    "Udało się zamknąć grant badawczy na ten rok! Ogromna satysfakcja."
+  ];
+  
+  const now = new Date();
+  let currentNoteIndex = 0;
+
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    
+    // Trend dostosowany do nowej, 7-stopniowej skali
+    let trend = i > 60 ? 1 : i > 30 ? 3 : 5;
+    let wave = Math.sin(i / 3) * 1.5; 
+    let randomVariation = (Math.random() * 2) - 1; 
+    
+    let val = Math.round(trend + wave + randomVariation);
+    val = Math.max(0, Math.min(6, val)); // Skala 0-6
+    
+    let note = "";
+    if (i % 4 === 0 || i === 2 || i === 5) {
+      note = notes[currentNoteIndex % notes.length];
+      currentNoteIndex++;
+    }
+    
+    moods.push({ id: Date.now() - i*10000, d: dateStr, v: val, note: note });
+  }
+  return moods;
+};
+
+const INIT_MOODS = generateHistoricalMoods();
+
+
+
+
+
 const DAYS   = ["Pon","Wt","Śr","Czw","Pt","Sb","Ndz"];
 
 // --- ROZSZERZONE DYNAMICZNE DATY ---
@@ -141,50 +189,6 @@ const INIT_TASKS = [
   { id: 25, title: "Trening cardio 🏃", w: 4, p: "sredni", done: false, duration: "45 min", deadline: "", difficulty: 4, desc: "Poprawa kondycji.", isLocked: false, t: "" }
 ];
 
-const generateHistoricalMoods = () => {
-  const moods = [];
-  const notes = [
-    "Sesja poprawkowa – 200 maili w skrzynce, przytłaczające.",
-    "Wpisane oceny do USOS – system o dziwo nie padł, ogromna ulga.",
-    "Dzień rektorski – nareszcie chwila na własne badania naukowe.",
-    "Seminarium magisterskie – studenci mają świetne tematy, to buduje!",
-    "Kolejne zebranie instytutu, nic konkretnego nie ustalono.",
-    "Udało się wysłać artykuł do recenzji, trzymam kciuki.",
-    "Znowu problem z rzutnikiem w sali 104...",
-    "Świetna dyskusja na dzisiejszym wykładzie z 3 rokiem.",
-    "Niespodziewane zastępstwo za kolegę. Brak czasu na obiadową przerwę.",
-    "Udało się zamknąć grant badawczy na ten rok! Ogromna satysfakcja."
-  ];
-  
-  const now = new Date();
-  let currentNoteIndex = 0;
-
-  for (let i = 89; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
-    
-    // Trend z "falowaniem", aby wykres był bardziej poszarpany i realistyczny
-    let trend = i > 60 ? 1 : i > 30 ? 2 : 3;
-    let wave = Math.sin(i / 3) * 1.5; 
-    let randomVariation = (Math.random() * 2) - 1; 
-    
-    let val = Math.round(trend + wave + randomVariation);
-    val = Math.max(0, Math.min(4, val)); 
-    
-    // Zagęszczenie notatek, aby upewnić się, że widać je na każdym filtrze
-    let note = "";
-    if (i % 4 === 0 || i === 2 || i === 5) {
-      note = notes[currentNoteIndex % notes.length];
-      currentNoteIndex++;
-    }
-    
-    moods.push({ id: Date.now() - i*10000, d: dateStr, v: val, note: note });
-  }
-  return moods;
-};
-
-const INIT_MOODS = generateHistoricalMoods();
 
 
 // --- GLOBAL HELPER ---
@@ -883,7 +887,7 @@ function TaskModal({onClose, onSave, taskToEdit}) {
 
 
 function MoodModal({onClose, onAdd, defaultNote = "", forced = false}) {
-  const [sel,setSel] = useState(2);
+  const [sel,setSel] = useState(3); // <--- Zmiana domyślnego indeksu na 3
   const [note, setNote] = useState(defaultNote);
   const today = new Date();
   const dateStr = today.toISOString().split("T")[0];
@@ -1366,42 +1370,47 @@ function MoodView({ moods, onOpenModal }) {
   const H = { fontFamily: "'Lora', serif" };
   const [filter, setFilter] = useState("Kwartał");
   const [hovered, setHovered] = useState(null);
+  const [showAvg, setShowAvg] = useState(false);
 
   let daysToShow = 90;
   if (filter === "Tydzień") daysToShow = 7;
   if (filter === "Miesiąc") daysToShow = 30;
 
-  // 1. Ustawiamy punkt odniesienia na "dzisiaj"
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const width = 1200; 
   const height = 400;
-  // 2. Dodajemy marginesy wewnętrzne, żeby kropki nie przyklejały się do krawędzi
-  const paddingX = 40; 
+  const paddingX = 60; // Zwiększony margines, aby zmieścić minki po lewej
   const innerWidth = width - 2 * paddingX;
 
-  // 3. Mapujemy punkty ściśle według różnicy w dniach (idealna skala czasu)
   const points = [];
+  let sumV = 0;
+  let countV = 0;
+
   moods.forEach(m => {
     const d = new Date(m.d);
     d.setHours(0, 0, 0, 0);
     const diffDays = Math.round((today - d) / (1000 * 60 * 60 * 24));
     
-    // Rysujemy tylko te kropki, które mieszczą się w przedziale filtra
     if (diffDays >= 0 && diffDays < daysToShow) {
       const x = paddingX + (1 - diffDays / (daysToShow - 1)) * innerWidth;
-      const y = height - 20 - (m.v / 9) * (height - 60);
+      const y = height - 20 - (m.v / 6) * (height - 60); // Podział przez 6 (skala 0-6)
       points.push({ x, y, data: m, diffDays });
+      
+      // Dodajemy do średniej
+      sumV += m.v;
+      countV++;
     }
   });
 
-  // Sortujemy od lewej do prawej, żeby linia się nie łamała
   points.sort((a, b) => b.diffDays - a.diffDays);
+  
+  // Obliczanie dynamicznej średniej
+  const avgV = countV > 0 ? sumV / countV : 0;
+  const avgY = countV > 0 ? height - 20 - (avgV / 6) * (height - 60) : 0;
 
   const linePath = points.length > 0 ? `M ${points.map(p => `${p.x},${p.y}`).join(" L ")}` : "";
-  
-  // Obliczamy krawędzie cienia pod wykresem
   const firstX = points.length > 0 ? points[0].x : paddingX;
   const lastX = points.length > 0 ? points[points.length - 1].x : width - paddingX;
   const areaPath = points.length > 0 ? `${linePath} L ${lastX},${height} L ${firstX},${height} Z` : "";
@@ -1410,19 +1419,32 @@ function MoodView({ moods, onOpenModal }) {
 
   return (
     <div className="p-10 max-w-7xl mx-auto w-full pb-32 animate-in fade-in duration-500">
-      <header className="mb-12 flex justify-between items-end">
-        <div>
-          <h1 style={H} className="text-4xl font-bold text-[#1A2F22] mb-4">Monitor nastroju</h1>
-          <p className="text-[#5A7368] text-sm max-w-xl">Śledź swoje samopoczucie w relacji do obowiązków akademickich.</p>
-        </div>
-        <button onClick={onOpenModal} className="px-6 py-3 bg-[#1E5C36] text-white rounded-xl font-bold shadow-lg active:scale-95 transition-all">
-          Zarejestruj swój nastrój
-        </button>
+      
+      {/* ODDZIELONY NAGŁÓWEK OPISOWY */}
+      <header className="mb-6">
+        <h1 style={H} className="text-4xl font-bold text-[#1A2F22] mb-4">Monitor nastroju</h1>
+        <p className="text-[#5A7368] text-sm max-w-xl">Śledź swoje samopoczucie w relacji do obowiązków akademickich.</p>
       </header>
 
-      {/* WYKRES (Teraz samodzielny, bez sekcji AI) */}
+      {/* NOWE BIAŁE MENU (ŚREDNIA I REJESTRACJA) */}
+      <div className="flex justify-between items-center bg-white p-3 rounded-2xl border border-[#E8DDD0] shadow-sm mb-8">
+        <div className="flex items-center gap-2 pl-2">
+          <button 
+            onClick={() => setShowAvg(!showAvg)}
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${showAvg ? "bg-[#1e3a8a] text-white border-[#1e3a8a] shadow-md" : "bg-transparent text-[#5A7368] border-transparent hover:bg-[#F5EFE6]"}`}
+          >
+            Średnia
+          </button>
+          {/* Puste miejsce na przyszłe funkcje np. Wzrost/Spadek */}
+        </div>
+        <button onClick={onOpenModal} className="px-6 py-3 bg-[#1E5C36] text-white rounded-xl font-bold shadow-md hover:bg-[#164a2c] active:scale-95 transition-all flex items-center gap-2">
+          <Smile size={18}/> Zarejestruj swój nastrój
+        </button>
+      </div>
+
+      {/* GŁÓWNY KONTENER WYKRESU */}
       <div className="bg-white rounded-[2.5rem] border border-[#E8DDD0] p-10 shadow-sm relative overflow-hidden">
-        <div className="flex justify-between items-center mb-12">
+        <div className="flex justify-between items-center mb-12 pl-12">
           <h3 className="font-bold text-[#1A2F22]">Wykres Twojego nastroju w czasie</h3>
           <div className="flex items-center gap-1 bg-[#F5EFE6] p-1 rounded-xl">
             {["Dzień", "Tydzień", "Miesiąc", "Kwartał", "Rok"].map(f => {
@@ -1445,9 +1467,19 @@ function MoodView({ moods, onOpenModal }) {
                 <stop offset="100%" stopColor="#2D9E6B" stopOpacity="0.0" />
               </linearGradient>
             </defs>
-            {[0, 2, 4, 6, 8, 9].map(level => (
-              <line key={level} x1="0" y1={height - 20 - (level/9)*(height-60)} x2={width} y2={height - 20 - (level/9)*(height-60)} stroke="#F5EFE6" strokeWidth="2" strokeDasharray="5,5" />
-            ))}
+            
+            {/* OŚ Y - 7 MINEK PO LEWEJ STRONIE ORAZ LINIE SIATKI */}
+            {[0, 1, 2, 3, 4, 5, 6].map(level => {
+              const yPos = height - 20 - (level/6)*(height-60);
+              return (
+                <g key={`grid-${level}`}>
+                  <text x="0" y={yPos + 8} fontSize="26">
+                    {EMOJIS[level]}
+                  </text>
+                  <line x1={paddingX} y1={yPos} x2={width} y2={yPos} stroke="#F5EFE6" strokeWidth="2" strokeDasharray="5,5" />
+                </g>
+              );
+            })}
             
             {points.length > 0 && (
               <>
@@ -1456,6 +1488,18 @@ function MoodView({ moods, onOpenModal }) {
               </>
             )}
 
+            {/* POGRUBIONA, GRANATOWA LINIA ŚREDNIEJ */}
+            {showAvg && countV > 0 && (
+               <g className="animate-in fade-in duration-500">
+                 <line x1={paddingX} y1={avgY} x2={width} y2={avgY} stroke="#1e3a8a" strokeWidth="4" strokeDasharray="12,8" strokeLinecap="round" />
+                 <rect x={width - 150} y={avgY - 30} width="150" height="28" rx="8" fill="#1e3a8a" />
+                 <text x={width - 75} y={avgY - 11} fill="white" fontSize="13" fontWeight="bold" textAnchor="middle">
+                    Średnia: {avgV.toFixed(1)} / 6.0
+                 </text>
+               </g>
+            )}
+
+            {/* INTERAKTYWNE PUNKTY */}
             {points.map((p, i) => (
               <g key={i}>
                 <circle cx={p.x} cy={p.y} r={4} fill="#2D9E6B" />
@@ -1465,6 +1509,7 @@ function MoodView({ moods, onOpenModal }) {
             ))}
           </svg>
 
+          {/* DYMEK INFORMACYJNY */}
           {hovered && (
             <div className="absolute z-50 bg-white border border-[#2D9E6B]/30 shadow-2xl rounded-2xl p-4 w-72 pointer-events-none transform -translate-x-1/2 -translate-y-[115%]" 
                  style={{ left: `${(points.find(p => p.data.id === hovered.id)?.x / width) * 100}%`, top: `${(points.find(p => p.data.id === hovered.id)?.y / height) * 100}%` }}>
