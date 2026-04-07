@@ -23,12 +23,54 @@ const PRIOS = [
   { id:"wysoki", label:"wysoki priorytet", tw:"bg-red-100 text-red-700",       dot:"bg-red-400"    },
 ];
 const CONTACTS = [
-  { org:"Instytut Psychologii Zdrowia PTP",  name:"Kryzysowy Telefon Zaufania",      phone:"116 123",      hours:"14:00–22:00",    url:"psychologia.edu.pl" },
-  { org:"Fundacja ITAKA (na zlecenie NFZ)",  name:"Centrum Wsparcia",                phone:"800 70 22 22", hours:"24/7 Całodobowy", url:"psychologia.edu.pl" },
-  { org:"Fundacja ITAKA",                    name:"Antydepresyjny Telefon Zaufania", phone:"22 484 88 01", hours:"Różne dyżury",    url:"stopdepresji.pl"    },
-  { org:'Stow. "Niebieska Linia"',           name:"Niebieska Linia",                 phone:"800 120 002",  hours:"24/7 Całodobowy", url:"niebieskalinia.pl"  },
-  { org:"Fundacja Dajemy Dzieciom Siłę",     name:"Telefon dla Dzieci i Młodzieży", phone:"116 111",      hours:"24/7 Całodobowy", url:"116111.pl"          },
-  { org:"Państwowe Ratownictwo Medyczne",    name:"Numer Alarmowy",                  phone:"112",          hours:"24/7 Całodobowy", url:"gov.pl"             },
+  { 
+    org: "Instytut Psychologii Zdrowia PTP", 
+    name: "Kryzysowy Telefon Zaufania", 
+    phone: "116 123", 
+    hours: "14:00–22:00", 
+    url: "https://psychologia.edu.pl", 
+    desc: "Wsparcie dla osób dorosłych w kryzysie emocjonalnym, zmagających się z samotnością lub trudną sytuacją życiową." 
+  },
+  { 
+    org: "Fundacja ITAKA (na zlecenie NFZ)", 
+    name: "Centrum Wsparcia", 
+    phone: "800 70 22 22", 
+    hours: "24/7 Całodobowo", 
+    url: "https://liniawsparcia.pl", 
+    desc: "Najbardziej ogólny punkt wsparcia, dostępny zawsze. Oferują pomoc telefoniczną, czat oraz dedykowaną aplikację." 
+  },
+  { 
+    org: "Fundacja ITAKA", 
+    name: "Antydepresyjny Telefon Zaufania", 
+    phone: "22 484 88 01", 
+    hours: "Różne dyżury", 
+    url: "https://stopdepresji.pl", 
+    desc: "Specjalistyczna pomoc skierowana bezpośrednio do osób zmagających się z depresją oraz ich bliskich." 
+  },
+  { 
+    org: "Stowarzyszenie Niebieska Linia", 
+    name: "Niebieska Linia", 
+    phone: "800 120 002", 
+    hours: "24/7 Całodobowo", 
+    url: "https://niebieskalinia.info", 
+    desc: "Pogotowie dla ofiar i świadków przemocy w rodzinie. Możesz tu uzyskać wsparcie psychologiczne i prawne." 
+  },
+  { 
+    org: "Fundacja Dajemy Dzieciom Siłę", 
+    name: "Telefon dla Dzieci i Młodzieży", 
+    phone: "116 111", 
+    hours: "24/7 Całodobowo", 
+    url: "https://116111.pl", 
+    desc: "Bezpłatna i anonimowa pomoc dla osób niepełnoletnich oraz młodych dorosłych w każdej trudnej sytuacji." 
+  },
+  { 
+    org: "Państwowe Ratownictwo Medyczne", 
+    name: "Numer Alarmowy", 
+    phone: "112", 
+    hours: "24/7 Całodobowo", 
+    url: "https://gov.pl/web/numer-alarmowy-112", 
+    desc: "Wyłącznie w sytuacjach bezpośredniego zagrożenia życia lub zdrowia wymagających natychmiastowej interwencji służb." 
+  },
 ];
 const EMOJIS = ["😫","😟","😐","😊","😄"];
 const MOOD_L = ["Bardzo źle","Źle","Neutralnie","Dobrze","Świetnie"];
@@ -1244,33 +1286,62 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
   );
 }
   
-function WarningView({loading}) {
+function WarningView({loading, user}) {
   const H={fontFamily:"'Lora',serif"};
   if(loading) return <SkeletonScreen/>;
+  
   return (
-    <div className="p-6 pb-10">
-      <div className="pt-8 mb-8">
-        <h1 style={H} className="text-2xl font-bold text-[#1A2F22] mb-1">System Ostrzegania</h1>
-        <p className="text-sm text-[#5A7368]">Bezpieczna przystań, gdy potrzebujesz pomocy.</p>
-      </div>
-      <div className="bg-red-50 p-6 rounded-3xl border border-red-200 mb-8">
-        <div className="flex items-center gap-2 text-red-600 mb-3 font-bold uppercase text-xs tracking-wider">
-          <AlertTriangle size={16} /> Sygnał ryzyka aktywny
+    <div className="p-10 max-w-6xl mx-auto w-full pb-32">
+      {/* NAGŁÓWEK PERSONALIZOWANY */}
+      <header className="mb-10">
+        <p className="text-[#5A7368] font-bold text-sm mb-1">Cześć {user?.name || "Natalia"}!</p>
+        <h1 style={H} className="text-4xl font-bold text-[#1A2F22] mb-4">System ostrzegania</h1>
+        <p className="text-[#5A7368] text-sm max-w-3xl leading-relaxed">
+          Wsparcie jest bliżej, niż myślisz. Jeśli czujesz, że potrzebujesz wsparcia, skontaktuj się z osobami, które są gotowe Ci pomóc. Poniżej znajdziesz listę organizacji oferujących bezpłatną pomoc.
+        </p>
+      </header>
+
+      {/* ŻÓŁTY BANER INFORMACYJNY */}
+      <div className="bg-amber-50 border border-amber-100 p-6 rounded-2xl flex gap-4 items-start mb-12 shadow-sm">
+        <div className="bg-white p-2 rounded-xl shadow-sm">
+          <Settings size={20} className="text-amber-500 animate-pulse"/>
         </div>
-        <p className="text-sm font-medium text-red-900 leading-relaxed mb-4">
-          Wsparcie jest bliżej, niż myślisz. Jeśli czujesz, że potrzebujesz wsparcia, skontaktuj się z osobami, które są gotowe Ci pomóc.
+        <p className="text-[11px] font-medium text-amber-800 leading-relaxed">
+          <span className="font-black uppercase tracking-wider block mb-1">Ważna informacja</span>
+          Ta informacja nie jest diagnozą, ale ważnym sygnałem ostrzegawczym. Warto przyjrzeć się swojemu planowi dnia, wprowadzić drobne zmiany i jeśli czujesz, że sytuacja się utrzymuje — rozważyć rozmowę ze specjalistą.
         </p>
       </div>
-      <div className="space-y-4">
-        {CONTACTS.map((c,i)=>(
-          <div key={i} className="bg-white border border-[#E8DDD0] p-5 rounded-3xl shadow-sm relative overflow-hidden group hover:border-red-200 transition-colors">
-            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-400" />
-            <div className="pl-2">
-              <h4 className="font-bold text-[#1A2F22] text-sm mb-3">{c.name}</h4>
+
+      {/* SIATKA KART KONTAKTOWYCH */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {CONTACTS.map((c, i) => (
+          <div key={i} className="bg-white border border-[#E8DDD0] rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group">
+            <p className="text-[10px] font-black uppercase text-[#9FB5AD] tracking-[0.15em] mb-1">{c.org}</p>
+            <h3 style={H} className="text-xl font-bold text-[#1A2F22] mb-4 group-hover:text-[#2D9E6B] transition-colors">{c.name}</h3>
+            
+            <p className="text-xs text-[#5A7368] leading-[1.7] mb-8 min-h-[4rem]">
+              {c.desc}
+            </p>
+
+            <div className="flex items-center justify-between pt-6 border-t border-[#F5EFE6]">
               <div className="flex items-center gap-2">
-                <Phone size={14} className="text-red-500"/>
-                <span className="text-xl font-black text-[#1A2F22] tracking-tight">{c.phone}</span>
+                <Phone size={14} className="text-[#2D9E6B]"/>
+                <span className="text-sm font-black text-[#1A2F22]">{c.phone}</span>
               </div>
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-[#9FB5AD]"/>
+                <span className="text-[11px] font-bold text-[#5A7368]">{c.hours}</span>
+              </div>
+              {/* Link do strony jako działający odnośnik */}
+<a 
+  href={c.url} 
+  target="_blank" 
+  rel="noopener noreferrer" 
+  className="flex items-center gap-2 text-[#9FB5AD] hover:text-[#2D9E6B] transition-colors"
+>
+  <ExternalLink size={14}/>
+  <span className="text-[11px] font-bold">{c.url.replace("https://", "")}</span>
+</a>
             </div>
           </div>
         ))}
@@ -1385,18 +1456,28 @@ export default function App() {
          return 0;
       });
 
-    flexTasks.forEach(t => {
+   flexTasks.forEach(t => {
       const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
       const duration = durMatch ? parseInt(durMatch[1]) : 45;
       const visualDuration = Math.max(duration, 45);
       
+      // --- DYNAMICZNY BUFOR (Zasada 52/17) ---
+      let breakTime = 0;
+      if (duration >= 50) {
+        breakTime = 17; // Długa przerwa po ciężkim bloku
+      } else if (duration >= 25) {
+        breakTime = Math.round((duration / 52) * 17); // Proporcjonalna przerwa (ok. 8-12 min)
+      } else {
+        breakTime = 3; // Tylko 3 minuty na "przełączenie się" przy krótkich taskach
+      }
+
       let fits = false;
       while (!fits) {
         const collision = lockedBlocks.find(b => 
           (currentPointer < b.eMins && (currentPointer + visualDuration) > b.sMins)
         );
         if (collision) {
-          currentPointer = collision.eMins + 5; 
+          currentPointer = collision.eMins + breakTime; 
         } else {
           fits = true;
         }
@@ -1406,7 +1487,7 @@ export default function App() {
         const idx = updatedTasks.findIndex(ut => ut.id === t.id);
         updatedTasks[idx].sMins = currentPointer;
         updatedTasks[idx].eMins = currentPointer + duration;
-        currentPointer += (visualDuration + 5);
+        currentPointer += (visualDuration + breakTime);
       }
     });
 
@@ -1513,7 +1594,7 @@ export default function App() {
                   loading={isLoading} 
                 />
               )}
-              {activeTab === "warning" && <WarningView loading={isLoading} />}
+              {activeTab === "warning" && <WarningView loading={isLoading} user={user} />}
             </div>
           </main>
           
