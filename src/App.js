@@ -793,9 +793,15 @@ function TaskModal({onClose, onSave, taskToEdit}) {
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#9FB5AD]">MIN</span>
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-black uppercase text-red-500 mb-2 block tracking-widest">Deadline</label>
-                <input type="datetime-local" value={deadline} onChange={e=>setDeadline(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-red-100 text-sm focus:border-red-400 outline-none transition-all"/>
+             <div>
+                <label className={`text-xs font-black uppercase mb-2 block tracking-widest transition-all ${isLocked ? 'text-gray-400 line-through' : 'text-red-500'}`}>Deadline</label>
+                <input 
+                  type="datetime-local" 
+                  value={deadline} 
+                  onChange={e=>setDeadline(e.target.value)} 
+                  disabled={isLocked}
+                  className={`w-full px-4 py-3 rounded-xl border-2 text-sm outline-none transition-all ${isLocked ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed line-through opacity-70' : 'border-red-100 focus:border-red-400 bg-white'}`}
+                />
               </div>
            </div>
 
@@ -810,12 +816,29 @@ function TaskModal({onClose, onSave, taskToEdit}) {
               </div>
            </div>
 
-           <div>
+          <div>
              <label className="text-xs font-black uppercase text-[#5A7368] mb-3 block tracking-widest">Ważność</label>
-             <div className="flex flex-wrap gap-2">
-               {PRIOS.map(pr => (
-                 <button key={pr.id} onClick={()=>setP(pr.id)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${p===pr.id ? "border-[#1E5C36] bg-[#E8F4ED] text-[#1E5C36]" : "border-transparent bg-slate-50 text-slate-400 hover:border-[#E8DDD0]"}`}>{pr.label}</button>
-               ))}
+             <div className="flex w-full gap-2">
+               {PRIOS.map(pr => {
+                 const isActive = p === pr.id;
+                 let activeClass = "border-[#1E5C36] bg-[#E8F4ED] text-[#1E5C36]"; // Zielony (niski priorytet)
+                 
+                 if (pr.id === "sredni") {
+                   activeClass = "border-amber-500 bg-amber-50 text-amber-600"; // Żółty/Pomarańczowy (średni priorytet)
+                 } else if (pr.id === "wysoki") {
+                   activeClass = "border-red-500 bg-red-50 text-red-600"; // Czerwony (wysoki priorytet)
+                 }
+                 
+                 return (
+                   <button 
+                     key={pr.id} 
+                     onClick={()=>setP(pr.id)} 
+                     className={`flex-1 px-1 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all border-2 whitespace-nowrap overflow-hidden text-ellipsis ${isActive ? activeClass : "border-transparent bg-slate-50 text-slate-400 hover:border-[#E8DDD0]"}`}
+                   >
+                     {pr.label}
+                   </button>
+                 );
+               })}
              </div>
            </div>
         </div>
