@@ -1870,8 +1870,6 @@ export default function App() {
             {/* NOWY HEADER ZE STREAKIEM (1 do 1 z HTML) */}
             <header className="w-full px-8 py-6 flex items-center justify-between border-b border-[#E8DDD0] bg-white sticky top-0 z-[60]">
               <div className="flex items-center space-x-4">
-                <h1 className="text-3xl text-[#164229] tracking-tight" style={{ fontFamily: "'Lora', serif", fontWeight: 700 }}>Wellbeing app</h1>
-                <div className="h-6 w-[1px] bg-gray-300"></div>
                 <span className="text-3xl font-bold text-[#164229]">Cześć {user?.name || "Natalia"}!</span>
               </div>
 
@@ -1904,43 +1902,40 @@ export default function App() {
 
                 {/* Licznik Dni */}
                 <div className="flex items-center space-x-2">
-                  <svg className="h-7 w-7 text-[#4CAF50]" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11.644 1.59a.75.75 0 01.656-.033c.483.218 1.488.948 2.126 1.951.52.818.895 1.758 1.053 2.711a.75.75 0 01-.397.77l-.612.306a.75.75 0 00-.416.711c.063.486.264 1.048.706 1.538.452.5.992.793 1.442.923.367.106.744.156 1.137.156a.75.75 0 01.716.974c-.452 1.462-1.393 2.906-2.585 3.99-1.353 1.23-3.14 1.93-4.887 1.93a.75.75 0 01-.75-.75c0-1.312-.472-2.58-1.425-3.532C7.753 11.395 6.485 10.923 5.173 10.923a.75.75 0 01-.75-.75c0-1.747.7-3.534 1.93-4.887 1.084-1.192 2.528-2.133 3.99-2.585a.75.75 0 01.974.716c0 .393.05.77.156 1.137.13.45.423.99.923 1.442.49.442 1.052.643 1.538.706a.75.75 0 00.711-.416l.306-.612a.75.75 0 01.77-.397c.953.158 1.893.533 2.711 1.053 1.003.638 1.733 1.643 1.951 2.126a.75.75 0 01-.033.656z" />
-                  </svg>
-                  <span className="text-2xl font-bold text-gray-800">12</span>
+                  <span className="text-[1.7rem] drop-shadow-sm filter">🔥</span>
+                  <span className="text-2xl font-bold text-gray-800">{tasks.some(t => t.done) ? 13 : 12}</span>
                 </div>
 
                 {/* Profil z działającym menu */}
-                <div className="relative flex items-center border-l border-gray-200 pl-4">
-                  <button onClick={() => setProfileMenuOpen(!profileMenuOpen)} className="flex items-center space-x-3 focus:outline-none">
-                    <svg className="w-10 h-10 rounded-full bg-gray-200" fill="none" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="20" cy="20" fill="#E5E7EB" r="20" />
-                      <path d="M20 20C22.2091 20 24 18.2091 24 16C24 13.7909 22.2091 12 20 12C17.7909 12 16 13.7909 16 16C16 18.2091 17.7909 20 20 20Z" fill="#9CA3AF" />
-                      <path d="M20 22C15.5817 22 12 25.5817 12 30H28C28 25.5817 24.4183 22 20 22Z" fill="#9CA3AF" />
-                    </svg>
-                    <div className="flex flex-col leading-tight text-left">
-                      <span className="text-sm font-medium text-gray-800">{user?.name || "Natalia"}</span>
-                      <span className="text-sm font-medium text-gray-800">Kowalska</span>
-                    </div>
-                    <svg className="h-5 w-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                <div className="flex items-center border-l border-gray-200 pl-4">
+                  <div className="relative w-full">
+                    <button onClick={() => setProfileMenuOpen(!profileMenuOpen)} className="flex items-center space-x-3 focus:outline-none w-full">
+                      <svg className="w-10 h-10 rounded-full bg-gray-200" fill="none" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" fill="#E5E7EB" r="20" />
+                        <path d="M20 20C22.2091 20 24 18.2091 24 16C24 13.7909 22.2091 12 20 12C17.7909 12 16 13.7909 16 16C16 18.2091 17.7909 20 20 20Z" fill="#9CA3AF" />
+                        <path d="M20 22C15.5817 22 12 25.5817 12 30H28C28 25.5817 24.4183 22 20 22Z" fill="#9CA3AF" />
+                      </svg>
+                      <div className="flex flex-col leading-tight text-left">
+                        <span className="text-sm font-medium text-gray-800">{user?.name || "Natalia"}</span>
+                      </div>
+                      <svg className={`h-5 w-5 text-gray-800 transition-transform duration-200 ${profileMenuOpen ? 'rotate-0' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
 
-                  {/* Menu wylogowania powiązane z kliknięciem w profil */}
-                  {profileMenuOpen && (
-                    <div className="absolute top-full mt-2 right-0 w-48 bg-white rounded-2xl shadow-xl border border-[#E8DDD0] py-2 z-[100] animate-in fade-in slide-in-from-top-2">
+                    {/* Menu wylogowania powiązane z kliknięciem w profil */}
+                    <div className={`absolute top-full mt-2 left-0 w-full bg-white rounded-2xl shadow-xl border border-[#E8DDD0] py-2 z-[100] origin-top transition-all duration-200 ease-out ${profileMenuOpen ? 'opacity-100 scale-100 translate-y-0 visible' : 'opacity-0 scale-95 -translate-y-2 invisible'}`}>
                       <button
                         onClick={() => {
                           localStorage.clear();
                           window.location.reload();
                         }}
-                        className="w-full px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-all rounded-xl"
+                        className="w-full px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 flex items-center justify-center gap-2 transition-all rounded-xl"
                       >
                         <LogOut size={16} /> Wyloguj mnie
                       </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </header>
