@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { 
-  Home, Calendar, Smile, AlertTriangle, Plus, Search, Check, X, 
-  ChevronDown, ChevronLeft, ChevronRight, Phone, Clock, ArrowRight, 
-  BookOpen, Brain, RefreshCw, Eye, EyeOff, LogOut, ExternalLink, 
-  Filter, Flame, Menu, Bell, Settings, TrendingUp, TrendingDown, 
+import {
+  Home, Calendar, Smile, AlertTriangle, Plus, Search, Check, X,
+  ChevronDown, ChevronLeft, ChevronRight, Phone, Clock, ArrowRight,
+  BookOpen, Brain, RefreshCw, Eye, EyeOff, LogOut, ExternalLink,
+  Filter, Flame, Menu, Bell, Settings, TrendingUp, TrendingDown,
   Minus, MessageSquare, Leaf, Star, AlertCircle, CheckCircle,
   Play, Pause, RotateCcw, Target, Sparkles, Trash2, Pencil, Lock
 } from "lucide-react";
@@ -12,64 +12,64 @@ import {
 //  CONSTANTS & CONFIG
 // ═══════════════════════════════════════════════════
 const BURNOUT_KW = [
-  "nie mam siły","przytłacza","koniec z tym","dość","nie mogę",
-  "wypalenie","rezygnuję","za dużo","zmęczony","zmęczona",
-  "załamanie","beznadziejna","desperacja","płaczę","nie daję rady"
+  "nie mam siły", "przytłacza", "koniec z tym", "dość", "nie mogę",
+  "wypalenie", "rezygnuję", "za dużo", "zmęczony", "zmęczona",
+  "załamanie", "beznadziejna", "desperacja", "płaczę", "nie daję rady"
 ];
 
 const PRIOS = [
-  { id:"niski",  label:"niski priorytet",  tw:"bg-green-100 text-green-700",  dot:"bg-green-400"  },
-  { id:"sredni", label:"średni priorytet", tw:"bg-yellow-100 text-yellow-700", dot:"bg-yellow-400" },
-  { id:"wysoki", label:"wysoki priorytet", tw:"bg-red-100 text-red-700",       dot:"bg-red-400"    },
+  { id: "niski", label: "niski priorytet", tw: "bg-green-100 text-green-700", dot: "bg-green-400" },
+  { id: "sredni", label: "średni priorytet", tw: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-400" },
+  { id: "wysoki", label: "wysoki priorytet", tw: "bg-red-100 text-red-700", dot: "bg-red-400" },
 ];
 const CONTACTS = [
-  { 
-    org: "Instytut Psychologii Zdrowia PTP", 
-    name: "Kryzysowy Telefon Zaufania", 
-    phone: "116 123", 
-    hours: "14:00–22:00", 
-    url: "https://psychologia.edu.pl", 
-    desc: "Wsparcie dla osób dorosłych w kryzysie emocjonalnym, zmagających się z samotnością lub trudną sytuacją życiową." 
+  {
+    org: "Instytut Psychologii Zdrowia PTP",
+    name: "Kryzysowy Telefon Zaufania",
+    phone: "116 123",
+    hours: "14:00–22:00",
+    url: "https://psychologia.edu.pl",
+    desc: "Wsparcie dla osób dorosłych w kryzysie emocjonalnym, zmagających się z samotnością lub trudną sytuacją życiową."
   },
-  { 
-    org: "Fundacja ITAKA (na zlecenie NFZ)", 
-    name: "Centrum Wsparcia", 
-    phone: "800 70 22 22", 
-    hours: "24/7 Całodobowo", 
-    url: "https://liniawsparcia.pl", 
-    desc: "Najbardziej ogólny punkt wsparcia, dostępny zawsze. Oferują pomoc telefoniczną, czat oraz dedykowaną aplikację." 
+  {
+    org: "Fundacja ITAKA (na zlecenie NFZ)",
+    name: "Centrum Wsparcia",
+    phone: "800 70 22 22",
+    hours: "24/7 Całodobowo",
+    url: "https://liniawsparcia.pl",
+    desc: "Najbardziej ogólny punkt wsparcia, dostępny zawsze. Oferują pomoc telefoniczną, czat oraz dedykowaną aplikację."
   },
-  { 
-    org: "Fundacja ITAKA", 
-    name: "Antydepresyjny Telefon Zaufania", 
-    phone: "22 484 88 01", 
-    hours: "Różne dyżury", 
-    url: "https://stopdepresji.pl", 
-    desc: "Specjalistyczna pomoc skierowana bezpośrednio do osób zmagających się z depresją oraz ich bliskich." 
+  {
+    org: "Fundacja ITAKA",
+    name: "Antydepresyjny Telefon Zaufania",
+    phone: "22 484 88 01",
+    hours: "Różne dyżury",
+    url: "https://stopdepresji.pl",
+    desc: "Specjalistyczna pomoc skierowana bezpośrednio do osób zmagających się z depresją oraz ich bliskich."
   },
-  { 
-    org: "Stowarzyszenie Niebieska Linia", 
-    name: "Niebieska Linia", 
-    phone: "800 120 002", 
-    hours: "24/7 Całodobowo", 
-    url: "https://niebieskalinia.info", 
-    desc: "Pogotowie dla ofiar i świadków przemocy w rodzinie. Możesz tu uzyskać wsparcie psychologiczne i prawne." 
+  {
+    org: "Stowarzyszenie Niebieska Linia",
+    name: "Niebieska Linia",
+    phone: "800 120 002",
+    hours: "24/7 Całodobowo",
+    url: "https://niebieskalinia.info",
+    desc: "Pogotowie dla ofiar i świadków przemocy w rodzinie. Możesz tu uzyskać wsparcie psychologiczne i prawne."
   },
-  { 
-    org: "Fundacja Dajemy Dzieciom Siłę", 
-    name: "Telefon dla Dzieci i Młodzieży", 
-    phone: "116 111", 
-    hours: "24/7 Całodobowo", 
-    url: "https://116111.pl", 
-    desc: "Bezpłatna i anonimowa pomoc dla osób niepełnoletnich oraz młodych dorosłych w każdej trudnej sytuacji." 
+  {
+    org: "Fundacja Dajemy Dzieciom Siłę",
+    name: "Telefon dla Dzieci i Młodzieży",
+    phone: "116 111",
+    hours: "24/7 Całodobowo",
+    url: "https://116111.pl",
+    desc: "Bezpłatna i anonimowa pomoc dla osób niepełnoletnich oraz młodych dorosłych w każdej trudnej sytuacji."
   },
-  { 
-    org: "Państwowe Ratownictwo Medyczne", 
-    name: "Numer Alarmowy", 
-    phone: "112", 
-    hours: "24/7 Całodobowo", 
-    url: "https://gov.pl/web/numer-alarmowy-112", 
-    desc: "Wyłącznie w sytuacjach bezpośredniego zagrożenia życia lub zdrowia wymagających natychmiastowej interwencji służb." 
+  {
+    org: "Państwowe Ratownictwo Medyczne",
+    name: "Numer Alarmowy",
+    phone: "112",
+    hours: "24/7 Całodobowo",
+    url: "https://gov.pl/web/numer-alarmowy-112",
+    desc: "Wyłącznie w sytuacjach bezpośredniego zagrożenia życia lub zdrowia wymagających natychmiastowej interwencji służb."
   },
 ];
 const EMOJIS = ["😫", "😟", "😐", "🙂", "😊", "😄", "🤩"];
@@ -91,7 +91,7 @@ const generateHistoricalMoods = () => {
     "Niespodziewane zastępstwo za kolegę. Brak czasu na obiadową przerwę.",
     "Udało się zamknąć grant badawczy na ten rok! Ogromna satysfakcja."
   ];
-  
+
   const now = new Date();
   let currentNoteIndex = 0;
 
@@ -99,22 +99,22 @@ const generateHistoricalMoods = () => {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split("T")[0];
-    
+
     // Trend dostosowany do nowej, 7-stopniowej skali
     let trend = i > 60 ? 1 : i > 30 ? 3 : 5;
-    let wave = Math.sin(i / 3) * 1.5; 
-    let randomVariation = (Math.random() * 2) - 1; 
-    
+    let wave = Math.sin(i / 3) * 1.5;
+    let randomVariation = (Math.random() * 2) - 1;
+
     let val = Math.round(trend + wave + randomVariation);
     val = Math.max(0, Math.min(6, val)); // Skala 0-6
-    
+
     let note = "";
     if (i % 4 === 0 || i === 2 || i === 5) {
       note = notes[currentNoteIndex % notes.length];
       currentNoteIndex++;
     }
-    
-    moods.push({ id: Date.now() - i*10000, d: dateStr, v: val, note: note });
+
+    moods.push({ id: Date.now() - i * 10000, d: dateStr, v: val, note: note });
   }
   return moods;
 };
@@ -125,12 +125,12 @@ const INIT_MOODS = generateHistoricalMoods();
 
 
 
-const DAYS   = ["Pon","Wt","Śr","Czw","Pt","Sb","Ndz"];
+const DAYS = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sb", "Ndz"];
 
 // --- ROZSZERZONE DYNAMICZNE DATY ---
 const now = new Date();
-const todayYMD = now.toISOString().split("T")[0]; 
-const todayPL = now.toLocaleDateString("pl-PL"); 
+const todayYMD = now.toISOString().split("T")[0];
+const todayPL = now.toLocaleDateString("pl-PL");
 
 const day2 = new Date(now); day2.setDate(now.getDate() + 1);
 const day2YMD = day2.toISOString().split("T")[0];
@@ -150,7 +150,7 @@ const day5PL = day5.toLocaleDateString("pl-PL");
 
 // Pomocnicze godziny
 const in3Hours = new Date(now.getTime() + 3 * 60 * 60 * 1000);
-const in3HoursTime = in3Hours.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+const in3HoursTime = in3Hours.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 const INIT_TASKS = [
   // --- DZIEŃ 1 (DZISIAJ) ---
@@ -199,21 +199,21 @@ const checkIsToday = (textString) => {
   const selYear = now.getFullYear();
   const selMonth = now.getMonth() + 1;
   const selDay = now.getDate();
-  const selDateOnly = new Date(selYear, now.getMonth(), selDay); 
-  
+  const selDateOnly = new Date(selYear, now.getMonth(), selDay);
+
   const endMatch = txt.match(/🛑 do (\d{4})-(\d{1,2})-(\d{1,2})/);
   if (endMatch) {
-      const endDate = new Date(parseInt(endMatch[1]), parseInt(endMatch[2]) - 1, parseInt(endMatch[3]));
-      if (selDateOnly > endDate) return false; 
+    const endDate = new Date(parseInt(endMatch[1]), parseInt(endMatch[2]) - 1, parseInt(endMatch[3]));
+    if (selDateOnly > endDate) return false;
   }
 
   const startMatch = textString.match(/\((\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})\)/);
   if (startMatch && (txt.includes("codziennie") || txt.includes("co tydzień") || txt.includes("w dni robocze"))) {
-      const startDate = new Date(parseInt(startMatch[3]), parseInt(startMatch[2]) - 1, parseInt(startMatch[1]));
-      if (selDateOnly < startDate) return false; 
+    const startDate = new Date(parseInt(startMatch[3]), parseInt(startMatch[2]) - 1, parseInt(startMatch[1]));
+    if (selDateOnly < startDate) return false;
   }
 
-  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; 
+  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
   const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
 
   if (txt.includes("codziennie") || txt.includes("każdego dnia")) return true;
@@ -235,105 +235,104 @@ const checkIsToday = (textString) => {
 //  STORAGE & TOASTS
 // ═══════════════════════════════════════════════════
 const ls = {
-  get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}},
-  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+  get: (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } }
 };
 function usePersist(key, init) {
-  const [s,set] = useState(()=>ls.get(key,init));
-  const save = useCallback(v=>set(p=>{const n=typeof v==="function"?v(p):v;ls.set(key,n);return n;}),[key]);
-  return [s,save];
+  const [s, set] = useState(() => ls.get(key, init));
+  const save = useCallback(v => set(p => { const n = typeof v === "function" ? v(p) : v; ls.set(key, n); return n; }), [key]);
+  return [s, save];
 }
 function useToasts() {
-  const [ts,setTs]=useState([]);
-  const add=useCallback((msg,type="ok")=>{
-    const id=Date.now()+Math.random();
-    setTs(p=>[...p,{id,msg,type}]);
-    setTimeout(()=>setTs(p=>p.filter(t=>t.id!==id)),4000);
-  },[]);
-  const rm=useCallback(id=>setTs(p=>p.filter(t=>t.id!==id)),[]);
-  return {ts,add,rm};
+  const [ts, setTs] = useState([]);
+  const add = useCallback((msg, type = "ok") => {
+    const id = Date.now() + Math.random();
+    setTs(p => [...p, { id, msg, type }]);
+    setTimeout(() => setTs(p => p.filter(t => t.id !== id)), 4000);
+  }, []);
+  const rm = useCallback(id => setTs(p => p.filter(t => t.id !== id)), []);
+  return { ts, add, rm };
 }
 
 // ═══════════════════════════════════════════════════
 //  UI ELEMENTS
 // ═══════════════════════════════════════════════════
 function Font() {
-  useEffect(()=>{
-    const el=Object.assign(document.createElement("link"),{
-      rel:"stylesheet",
-      href:"https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+  useEffect(() => {
+    const el = Object.assign(document.createElement("link"), {
+      rel: "stylesheet",
+      href: "https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
     });
     document.head.appendChild(el);
-    return ()=>{try{document.head.removeChild(el);}catch{}};
-  },[]);
+    return () => { try { document.head.removeChild(el); } catch { } };
+  }, []);
   return null;
 }
-function Toasts({ts,rm}) {
+function Toasts({ ts, rm }) {
   return (
     <div className="fixed top-5 right-5 z-[9999] space-y-2 max-w-xs pointer-events-none">
-      {ts.map(t=>(
-        <div key={t.id} className={`flex items-start gap-3 px-5 py-4 rounded-2xl shadow-2xl text-sm font-medium pointer-events-auto border ${
-          t.type==="warn" ? "bg-red-600 text-white border-red-500" : "bg-[#1E5C36] text-white border-[#164a2c]"
-        } transition-all duration-300 animate-in slide-in-from-right`}>
+      {ts.map(t => (
+        <div key={t.id} className={`flex items-start gap-3 px-5 py-4 rounded-2xl shadow-2xl text-sm font-medium pointer-events-auto border ${t.type === "warn" ? "bg-red-600 text-white border-red-500" : "bg-[#1E5C36] text-white border-[#164a2c]"
+          } transition-all duration-300 animate-in slide-in-from-right`}>
           <span className="flex-1 leading-relaxed">{t.msg}</span>
-          <button onClick={()=>rm(t.id)} className="opacity-60 hover:opacity-100 flex-shrink-0 mt-0.5"><X size={14}/></button>
+          <button onClick={() => rm(t.id)} className="opacity-60 hover:opacity-100 flex-shrink-0 mt-0.5"><X size={14} /></button>
         </div>
       ))}
     </div>
   );
 }
-function Sk({cls=""}) {
-  return <div className={`animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite] rounded-2xl ${cls}`}/>;
+function Sk({ cls = "" }) {
+  return <div className={`animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite] rounded-2xl ${cls}`} />;
 }
 function SkeletonScreen() {
   return (
     <div className="p-6 space-y-4 pt-14">
-      <Sk cls="h-7 w-44"/>
-      <Sk cls="h-4 w-64"/>
+      <Sk cls="h-7 w-44" />
+      <Sk cls="h-4 w-64" />
       <div className="space-y-3 mt-4">
-        {[80,72,72,72].map((h,i)=><Sk key={i} cls={`h-${h===80?"20":"16"} w-full`}/>)}
+        {[80, 72, 72, 72].map((h, i) => <Sk key={i} cls={`h-${h === 80 ? "20" : "16"} w-full`} />)}
       </div>
-      <Sk cls="h-48 w-full mt-2"/>
+      <Sk cls="h-48 w-full mt-2" />
     </div>
   );
 }
-function PBadge({p}) {
-  const pr=PRIOS.find(x=>x.id===p)||PRIOS[0];
+function PBadge({ p }) {
+  const pr = PRIOS.find(x => x.id === p) || PRIOS[0];
   return <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase ${pr.tw}`}>{pr.label}</span>;
 }
 
 // ═══════════════════════════════════════════════════
 //  LANDING PAGE
 // ═══════════════════════════════════════════════════
-function Landing({onCTA}) {
-  const S={fontFamily:"'DM Sans',sans-serif"};
-  const H={fontFamily:"'Lora',serif"};
+function Landing({ onCTA }) {
+  const S = { fontFamily: "'DM Sans',sans-serif" };
+  const H = { fontFamily: "'Lora',serif" };
   return (
     <div style={S} className="bg-[#F5EFE6] min-h-screen">
       <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#E8DDD0] px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <span style={H} className="text-[#1E5C36] font-bold text-xl tracking-tight">Wellbeing app</span>
           <div className="flex gap-2">
-            <button onClick={()=>onCTA("login")} className="px-5 py-2 text-sm font-semibold text-[#1E5C36] border-2 border-[#1E5C36] rounded-full hover:bg-[#1E5C36] hover:text-white transition-all duration-200">Zaloguj się</button>
-            <button onClick={()=>onCTA("register")} className="px-5 py-2 text-sm font-semibold bg-[#1E5C36] text-white rounded-full hover:bg-[#164a2c] transition-all duration-200 shadow-lg shadow-green-900/20">Zarejestruj się</button>
+            <button onClick={() => onCTA("login")} className="px-5 py-2 text-sm font-semibold text-[#1E5C36] border-2 border-[#1E5C36] rounded-full hover:bg-[#1E5C36] hover:text-white transition-all duration-200">Zaloguj się</button>
+            <button onClick={() => onCTA("register")} className="px-5 py-2 text-sm font-semibold bg-[#1E5C36] text-white rounded-full hover:bg-[#164a2c] transition-all duration-200 shadow-lg shadow-green-900/20">Zarejestruj się</button>
           </div>
         </div>
       </nav>
       <section className="px-6 py-20 max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
         <div>
           <h1 style={H} className="text-5xl font-bold text-[#1A2F22] leading-[1.12] mb-6">
-            Zdobądź kontrolę<br/>nad swoim dniem<br/><em className="not-italic text-[#2D9E6B]">i zadbaj<br/>o dobrostan</em>
+            Zdobądź kontrolę<br />nad swoim dniem<br /><em className="not-italic text-[#2D9E6B]">i zadbaj<br />o dobrostan</em>
           </h1>
           <p className="text-[#5A7368] text-lg leading-relaxed mb-8">
             Aplikacja dla pracowników, która łączy inteligentny harmonogram z monitorowaniem nastroju, by wcześnie wykrywać możliwe symptomy wypalenia zawodowego.
           </p>
-          <button onClick={()=>onCTA("register")} className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#1E5C36] text-white rounded-full font-semibold hover:bg-[#164a2c] shadow-xl shadow-green-900/25 transition-all hover:-translate-y-0.5">
-            Dowiedz się więcej <ArrowRight size={18}/>
+          <button onClick={() => onCTA("register")} className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#1E5C36] text-white rounded-full font-semibold hover:bg-[#164a2c] shadow-xl shadow-green-900/25 transition-all hover:-translate-y-0.5">
+            Dowiedz się więcej <ArrowRight size={18} />
           </button>
         </div>
         <div className="relative flex items-center justify-center h-72">
-          <div className="absolute w-72 h-72 rounded-full bg-[#E8B94F]/12 blur-3xl"/>
-          <div className="absolute w-48 h-48 rounded-full bg-[#2D9E6B]/10 blur-2xl translate-x-10"/>
+          <div className="absolute w-72 h-72 rounded-full bg-[#E8B94F]/12 blur-3xl" />
+          <div className="absolute w-48 h-48 rounded-full bg-[#2D9E6B]/10 blur-2xl translate-x-10" />
           <span className="relative z-10 text-[120px] leading-none select-none drop-shadow-2xl">🌿</span>
         </div>
       </section>
@@ -343,10 +342,10 @@ function Landing({onCTA}) {
           <h2 style={H} className="text-4xl font-bold text-center text-[#1A2F22] mb-14">Największe korzyści</h2>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              {icon:"📅",title:"Spersonalizowany harmonogram zadań dopasowany do Twojego obciążenia."},
-              {icon:"😊",title:"Codzienne monitorowanie nastroju i cotygodniowe raporty."},
-              {icon:"🔔",title:"Wczesne ostrzeganie i bezpieczne rekomendacje"},
-            ].map((f,i)=>(
+              { icon: "📅", title: "Spersonalizowany harmonogram zadań dopasowany do Twojego obciążenia." },
+              { icon: "😊", title: "Codzienne monitorowanie nastroju i cotygodniowe raporty." },
+              { icon: "🔔", title: "Wczesne ostrzeganie i bezpieczne rekomendacje" },
+            ].map((f, i) => (
               <div key={i} className="p-7 rounded-3xl bg-[#F5EFE6] hover:shadow-xl hover:shadow-green-100 transition-all duration-300 hover:-translate-y-1 cursor-default">
                 <div className="text-4xl mb-4">{f.icon}</div>
                 <p className="text-[#1A2F22] font-medium leading-relaxed">{f.title}</p>
@@ -362,67 +361,67 @@ function Landing({onCTA}) {
 // ═══════════════════════════════════════════════════
 //  AUTH VIEW & ONBOARDING
 // ═══════════════════════════════════════════════════
-function AuthView({mode, onAuth, onSwitch, onBack}) {
-  const [name,setName]=useState("");
-  const [email,setEmail]=useState("");
-  const [pw,setPw]=useState("");
-  const [pw2,setPw2]=useState("");
-  const [show,setShow]=useState(false);
-  const [agreed,setAgreed]=useState(false);
-  const [err,setErr]=useState("");
-  const S={fontFamily:"'DM Sans',sans-serif"};
-  const H={fontFamily:"'Lora',serif"};
-  const submit=()=>{
+function AuthView({ mode, onAuth, onSwitch, onBack }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [show, setShow] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [err, setErr] = useState("");
+  const S = { fontFamily: "'DM Sans',sans-serif" };
+  const H = { fontFamily: "'Lora',serif" };
+  const submit = () => {
     setErr("");
-    if(mode==="register"){
-      if(!name||!email||!pw){setErr("Uzupełnij wszystkie pola.");return;}
-      if(pw!==pw2){setErr("Hasła nie są identyczne.");return;}
-      if(pw.length<8){setErr("Hasło musi mieć min. 8 znaków.");return;}
-      if(!agreed){setErr("Zaakceptuj regulamin.");return;}
+    if (mode === "register") {
+      if (!name || !email || !pw) { setErr("Uzupełnij wszystkie pola."); return; }
+      if (pw !== pw2) { setErr("Hasła nie są identyczne."); return; }
+      if (pw.length < 8) { setErr("Hasło musi mieć min. 8 znaków."); return; }
+      if (!agreed) { setErr("Zaakceptuj regulamin."); return; }
     } else {
-      if(!email||!pw){setErr("Uzupełnij e-mail i hasło.");return;}
+      if (!email || !pw) { setErr("Uzupełnij e-mail i hasło."); return; }
     }
-    onAuth({name:name||email.split("@")[0],email});
+    onAuth({ name: name || email.split("@")[0], email });
   };
   return (
     <div style={S} className="min-h-screen bg-[#F5EFE6] flex flex-col">
       <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-[#E8DDD0] px-6 py-4 flex items-center justify-between">
         <button onClick={onBack}><span style={H} className="text-[#1E5C36] font-bold text-xl">Wellbeing app</span></button>
         <div className="flex gap-2">
-          <button onClick={()=>onSwitch("login")} className={`px-5 py-2 text-sm font-semibold rounded-full border-2 transition-all ${mode==="login"?"bg-[#1E5C36] text-white border-[#1E5C36]":"text-[#1E5C36] border-[#1E5C36] hover:bg-[#f0f9f4]"}`}>Zaloguj się</button>
-          <button onClick={()=>onSwitch("register")} className={`px-5 py-2 text-sm font-semibold rounded-full border-2 transition-all ${mode==="register"?"bg-[#1E5C36] text-white border-[#1E5C36]":"text-[#1E5C36] border-[#1E5C36] hover:bg-[#f0f9f4]"}`}>Zarejestruj się</button>
+          <button onClick={() => onSwitch("login")} className={`px-5 py-2 text-sm font-semibold rounded-full border-2 transition-all ${mode === "login" ? "bg-[#1E5C36] text-white border-[#1E5C36]" : "text-[#1E5C36] border-[#1E5C36] hover:bg-[#f0f9f4]"}`}>Zaloguj się</button>
+          <button onClick={() => onSwitch("register")} className={`px-5 py-2 text-sm font-semibold rounded-full border-2 transition-all ${mode === "register" ? "bg-[#1E5C36] text-white border-[#1E5C36]" : "text-[#1E5C36] border-[#1E5C36] hover:bg-[#f0f9f4]"}`}>Zarejestruj się</button>
         </div>
       </nav>
       <div className="flex-1 flex items-center justify-center px-6 py-12 relative overflow-hidden">
         <div className="relative z-10 bg-white rounded-3xl shadow-2xl shadow-green-900/10 p-8 w-full max-w-sm border border-[#E8DDD0]">
           <h2 style={H} className="text-2xl font-bold text-[#1A2F22] text-center mb-1">
-            {mode==="register"?"Utwórz konto":"Zaloguj się"}
+            {mode === "register" ? "Utwórz konto" : "Zaloguj się"}
           </h2>
           <p className="text-center text-[#5A7368] text-sm mb-6">
-            {mode==="register"?"Cześć, cieszymy się, że będziemy mogli Ci pomóc!":"Cześć, dobrze Cię widzieć!"}
+            {mode === "register" ? "Cześć, cieszymy się, że będziemy mogli Ci pomóc!" : "Cześć, dobrze Cię widzieć!"}
           </p>
           {err && <div className="mb-4 px-3 py-2.5 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-600">{err}</div>}
           <div className="space-y-3">
-            {mode==="register"&&<input value={name} onChange={e=>setName(e.target.value)} placeholder="Podaj swoje imię" className="w-full px-4 py-3 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] transition-all"/>}
-            <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Wprowadź swój e-mail" type="email" className="w-full px-4 py-3 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] transition-all"/>
+            {mode === "register" && <input value={name} onChange={e => setName(e.target.value)} placeholder="Podaj swoje imię" className="w-full px-4 py-3 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] transition-all" />}
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Wprowadź swój e-mail" type="email" className="w-full px-4 py-3 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] transition-all" />
             <div className="relative">
-              <input value={pw} onChange={e=>setPw(e.target.value)} placeholder="Wprowadź hasło" type={show?"text":"password"} className="w-full px-4 py-3 pr-10 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] transition-all"/>
-              <button onClick={()=>setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9FB5AD] hover:text-[#5A7368]">{show?<EyeOff size={16}/>:<Eye size={16}/>}</button>
+              <input value={pw} onChange={e => setPw(e.target.value)} placeholder="Wprowadź hasło" type={show ? "text" : "password"} className="w-full px-4 py-3 pr-10 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] transition-all" />
+              <button onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9FB5AD] hover:text-[#5A7368]">{show ? <EyeOff size={16} /> : <Eye size={16} />}</button>
             </div>
-            {mode==="register"&&<>
+            {mode === "register" && <>
               <p className="text-[10px] text-[#9FB5AD] -mt-1 ml-1">*minimum 8 znaków</p>
-              <input value={pw2} onChange={e=>setPw2(e.target.value)} placeholder="Powtórz hasło" type="password" className="w-full px-4 py-3 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] transition-all"/>
+              <input value={pw2} onChange={e => setPw2(e.target.value)} placeholder="Powtórz hasło" type="password" className="w-full px-4 py-3 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] transition-all" />
               <label className="flex items-start gap-2 text-xs text-[#5A7368] cursor-pointer leading-relaxed">
-                <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} className="mt-0.5 rounded accent-[#1E5C36]"/>
+                <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-0.5 rounded accent-[#1E5C36]" />
                 Wyrażam zgodę na warunki Regulaminu.
               </label>
             </>}
             <button onClick={submit} className="w-full py-3.5 bg-[#1E5C36] text-white rounded-2xl font-semibold text-sm hover:bg-[#164a2c] transition-all shadow-lg mt-1">
-              {mode==="register"?"Kontynuuj":"Zaloguj się"}
+              {mode === "register" ? "Kontynuuj" : "Zaloguj się"}
             </button>
             <p className="text-center text-sm text-[#5A7368] mt-4">
-              <button onClick={()=>onSwitch(mode==="register"?"login":"register")} className="text-[#2D9E6B] font-semibold hover:underline">
-                {mode==="register"?"Zaloguj się":"Zarejestruj się"}
+              <button onClick={() => onSwitch(mode === "register" ? "login" : "register")} className="text-[#2D9E6B] font-semibold hover:underline">
+                {mode === "register" ? "Zaloguj się" : "Zarejestruj się"}
               </button>
             </p>
           </div>
@@ -432,57 +431,57 @@ function AuthView({mode, onAuth, onSwitch, onBack}) {
   );
 }
 
-function Onboarding({onComplete}) {
-  const [step,setStep]=useState(0);
-  const [hours,setHours]=useState(8);
-  const [focus,setFocus]=useState("Rano");
-  const [picks,setPicks]=useState([]);
-  const S={fontFamily:"'DM Sans',sans-serif"};
-  const H={fontFamily:"'Lora',serif"};
-  const OPTS=["Wyjście na słońce","Kilka minut przerwy","Dobra kawa","Krótki spacer","Rozmowa z bliskim","Mała przekąska","Przerwa od pracy","Muzyka","Zmiana otoczenia"];
-  
-  const toggle=b=>setPicks(p=>p.includes(b)?p.filter(x=>x!==b):[...p,b]);
-  
+function Onboarding({ onComplete }) {
+  const [step, setStep] = useState(0);
+  const [hours, setHours] = useState(8);
+  const [focus, setFocus] = useState("Rano");
+  const [picks, setPicks] = useState([]);
+  const S = { fontFamily: "'DM Sans',sans-serif" };
+  const H = { fontFamily: "'Lora',serif" };
+  const OPTS = ["Wyjście na słońce", "Kilka minut przerwy", "Dobra kawa", "Krótki spacer", "Rozmowa z bliskim", "Mała przekąska", "Przerwa od pracy", "Muzyka", "Zmiana otoczenia"];
+
+  const toggle = b => setPicks(p => p.includes(b) ? p.filter(x => x !== b) : [...p, b]);
+
   return (
     <div style={S} className="min-h-screen bg-[#F5EFE6] flex flex-col">
       <nav className="bg-white/85 backdrop-blur-xl border-b border-[#E8DDD0] px-6 py-4"><span style={H} className="text-[#1E5C36] font-bold text-xl">Wellbeing app</span></nav>
       <div className="flex-1 flex items-center justify-center px-6 py-12 relative overflow-hidden">
         <div className="relative z-10 bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg border border-[#E8DDD0]">
           <div className="flex justify-center gap-2 mb-7">
-            {[0,1,2].map(i=>(
-              <div key={i} className={`h-1.5 rounded-full transition-all duration-400 ${i<=step?"w-10 bg-[#1E5C36]":"w-5 bg-[#E8DDD0]"}`}/>
+            {[0, 1, 2].map(i => (
+              <div key={i} className={`h-1.5 rounded-full transition-all duration-400 ${i <= step ? "w-10 bg-[#1E5C36]" : "w-5 bg-[#E8DDD0]"}`} />
             ))}
           </div>
-          {step===0&&<>
+          {step === 0 && <>
             <h2 style={H} className="text-2xl font-bold text-center text-[#1A2F22] mb-2">Pytanie 1 z 3</h2>
             <p className="text-center text-[#5A7368] mb-8 text-sm">Ile godzin dziennie spędzasz w pracy?</p>
             <div className="flex items-center justify-center gap-6">
-              <button onClick={()=>setHours(h=>Math.max(1,h-1))} className="w-12 h-12 rounded-2xl border-2 border-[#E8DDD0] flex items-center justify-center text-xl font-bold text-[#5A7368] transition-all">−</button>
+              <button onClick={() => setHours(h => Math.max(1, h - 1))} className="w-12 h-12 rounded-2xl border-2 border-[#E8DDD0] flex items-center justify-center text-xl font-bold text-[#5A7368] transition-all">−</button>
               <span className="text-6xl font-bold text-[#1A2F22] w-20 text-center">{hours}</span>
-              <button onClick={()=>setHours(h=>Math.min(24,h+1))} className="w-12 h-12 rounded-2xl border-2 border-[#E8DDD0] flex items-center justify-center text-xl font-bold text-[#5A7368] transition-all">+</button>
+              <button onClick={() => setHours(h => Math.min(24, h + 1))} className="w-12 h-12 rounded-2xl border-2 border-[#E8DDD0] flex items-center justify-center text-xl font-bold text-[#5A7368] transition-all">+</button>
             </div>
           </>}
-          {step===1&&<>
+          {step === 1 && <>
             <h2 style={H} className="text-2xl font-bold text-center text-[#1A2F22] mb-2">Pytanie 2 z 3</h2>
             <p className="text-center text-[#5A7368] mb-6 text-sm">W jakich godzinach zazwyczaj czujesz największy przypływ koncentracji?</p>
-            <select value={focus} onChange={e=>setFocus(e.target.value)} className="w-full px-4 py-3 rounded-2xl border-2 border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] bg-white appearance-none">
-              {["Rano (7:00–12:00)","Środek dnia (11:00–16:00)","Wieczór/Noc (po 17:00)","To zależy / Różnie"].map(o=><option key={o}>{o}</option>)}
+            <select value={focus} onChange={e => setFocus(e.target.value)} className="w-full px-4 py-3 rounded-2xl border-2 border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] bg-white appearance-none">
+              {["Rano (7:00–12:00)", "Środek dnia (11:00–16:00)", "Wieczór/Noc (po 17:00)", "To zależy / Różnie"].map(o => <option key={o}>{o}</option>)}
             </select>
           </>}
-          {step===2&&<>
+          {step === 2 && <>
             <h2 style={H} className="text-2xl font-bold text-center text-[#1A2F22] mb-1">Pytanie 3 z 3</h2>
             <p className="text-center text-[#5A7368] text-sm mb-1">Co najszybciej poprawia Ci nastrój kiedy masz kryzys w ciągu dnia?</p>
             <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1 mt-4">
-              {OPTS.map(b=>(
-                <label key={b} className={`flex items-start gap-2 p-3 rounded-2xl cursor-pointer transition-all text-xs leading-relaxed ${picks.includes(b)?"bg-[#E8F4ED] border-2 border-[#2D9E6B] text-[#1E5C36]":"bg-[#F5EFE6] border-2 border-transparent text-[#1A2F22] hover:border-[#E8DDD0]"}`}>
-                  <input type="checkbox" checked={picks.includes(b)} onChange={()=>toggle(b)} className="mt-0.5 rounded accent-[#1E5C36] flex-shrink-0"/>
+              {OPTS.map(b => (
+                <label key={b} className={`flex items-start gap-2 p-3 rounded-2xl cursor-pointer transition-all text-xs leading-relaxed ${picks.includes(b) ? "bg-[#E8F4ED] border-2 border-[#2D9E6B] text-[#1E5C36]" : "bg-[#F5EFE6] border-2 border-transparent text-[#1A2F22] hover:border-[#E8DDD0]"}`}>
+                  <input type="checkbox" checked={picks.includes(b)} onChange={() => toggle(b)} className="mt-0.5 rounded accent-[#1E5C36] flex-shrink-0" />
                   <span>{b}</span>
                 </label>
               ))}
             </div>
           </>}
           {/* TUTAJ ZMIANA: Przekazujemy tablicę "picks" do funkcji onComplete */}
-          <button onClick={()=>{if(step<2)setStep(s=>s+1);else onComplete(picks);}} className="w-full py-3.5 mt-6 bg-[#1E5C36] text-white rounded-2xl font-semibold hover:bg-[#164a2c] transition-all shadow-lg">
+          <button onClick={() => { if (step < 2) setStep(s => s + 1); else onComplete(picks); }} className="w-full py-3.5 mt-6 bg-[#1E5C36] text-white rounded-2xl font-semibold hover:bg-[#164a2c] transition-all shadow-lg">
             Kontynuuj
           </button>
         </div>
@@ -495,15 +494,14 @@ function Onboarding({onComplete}) {
 //  APP: SIDEBAR / LAYOUT
 // ═══════════════════════════════════════════════════
 function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selectedDate, setSelectedDate }) {
-  const [menu, setMenu] = useState(false);
   const H = { fontFamily: "'Lora', serif" };
-  
+
   // Logika generowania dni w mini-kalendarzu
   const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
   const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
-  
+
   // Obliczamy przesunięcie dla pierwszego dnia miesiąca (0 = Pon, 6 = Ndz)
-  const firstDayIndex = (startOfMonth.getDay() + 6) % 7; 
+  const firstDayIndex = (startOfMonth.getDay() + 6) % 7;
   // Tworzymy tablicę z pustymi elementami do wypełnienia luk w siatce
   const emptyDays = Array.from({ length: firstDayIndex }, (_, i) => i);
 
@@ -551,8 +549,8 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
               {selectedDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' })}
             </span>
             <div className="flex gap-1">
-              <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-[#E8DDD0] rounded-md"><ChevronLeft size={14}/></button>
-              <button onClick={() => changeMonth(1)} className="p-1 hover:bg-[#E8DDD0] rounded-md"><ChevronRight size={14}/></button>
+              <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-[#E8DDD0] rounded-md"><ChevronLeft size={14} /></button>
+              <button onClick={() => changeMonth(1)} className="p-1 hover:bg-[#E8DDD0] rounded-md"><ChevronRight size={14} /></button>
             </div>
           </div>
           <div className="grid grid-cols-7 gap-0.5 text-center text-[9px] font-black text-[#9FB5AD] mb-2 uppercase tracking-tighter">
@@ -565,13 +563,13 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
             {emptyDays.map((_, idx) => (
               <div key={`empty-${idx}`} className="aspect-square"></div>
             ))}
-            
+
             {/* Następnie mapujemy właściwe dni */}
             {daysInMonth.map((date, idx) => {
               const isToday = date.toDateString() === new Date().toDateString();
               const isSelected = date.toDateString() === selectedDate.toDateString();
               return (
-                <button 
+                <button
                   key={`day-${idx}`}
                   onClick={() => { setSelectedDate(date); onNav("calendar"); }}
                   className={`aspect-square flex items-center justify-center rounded-md text-[9px] font-bold transition-all ${isSelected ? "bg-[#1E5C36] text-white" : isToday ? "text-[#1E5C36] border border-[#1E5C36]" : "text-[#5A7368] hover:bg-[#E8DDD0]"}`}
@@ -584,29 +582,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
         </div>
       )}
 
-      <div className="px-4 py-4 border-t border-[#E8DDD0] relative">
-        <button onClick={() => setMenu(!menu)} className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-[#F5EFE6] transition-all">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2D9E6B] to-[#1E5C36] flex items-center justify-center text-white font-bold flex-shrink-0">
-            {user?.name?.charAt(0) || "U"}
-          </div>
-          {!collapsed && <span className="text-sm font-bold text-[#1A2F22] truncate">{user?.name || "Użytkownik"}</span>}
-        </button>
-
-        {/* NAPRAWIONE MENU WYLOGOWANIA */}
-        {menu && (
-          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-2xl shadow-2xl border border-[#E8DDD0] py-2 z-50 animate-in fade-in slide-in-from-bottom-2">
-            <button 
-              onClick={() => {
-                localStorage.clear(); // Całkowicie czyści pamięć
-                window.location.reload(); // Odświeża stronę (przenosi do Landing Page)
-              }} 
-              className="w-full px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-all rounded-xl"
-            >
-              <LogOut size={16}/> Wyloguj mnie
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Profil użytkownika przeniesiony do prawego górnego rogu aplikacji */}
     </aside>
   );
 }
@@ -616,7 +592,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
 function FocusModeView({ task, onClose, onComplete }) {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
-  const H = {fontFamily:"'Lora',serif"};
+  const H = { fontFamily: "'Lora',serif" };
 
   useEffect(() => {
     let interval = null;
@@ -662,48 +638,48 @@ function FocusModeView({ task, onClose, onComplete }) {
   );
 }
 
-function TaskCard({task,onToggle, onFocus, onDelete, onEdit})  {
-  const pr=PRIOS.find(x=>x.id===task.p)||PRIOS[0];
+function TaskCard({ task, onToggle, onFocus, onDelete, onEdit }) {
+  const pr = PRIOS.find(x => x.id === task.p) || PRIOS[0];
 
   return (
-    <div className={`bg-white rounded-2xl border border-[#E8DDD0] p-4 transition-all duration-200 hover:shadow-md hover:border-[#D4C9BC] group ${task.done?"opacity-55":""}`}>
+    <div className={`bg-white rounded-2xl border border-[#E8DDD0] p-4 transition-all duration-200 hover:shadow-md hover:border-[#D4C9BC] group ${task.done ? "opacity-55" : ""}`}>
       <div className="flex items-start gap-3">
-        <button onClick={()=>onToggle(task.id)} className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150 ${task.done?"bg-[#1E5C36] border-[#1E5C36]":"border-[#C4BBAF] hover:border-[#1E5C36] group-hover:border-[#2D9E6B]"}`}>
-          {task.done&&<Check size={11} className="text-white"/>}
+        <button onClick={() => onToggle(task.id)} className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-150 ${task.done ? "bg-[#1E5C36] border-[#1E5C36]" : "border-[#C4BBAF] hover:border-[#1E5C36] group-hover:border-[#2D9E6B]"}`}>
+          {task.done && <Check size={11} className="text-white" />}
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className={`text-sm font-semibold text-[#1A2F22] leading-snug ${task.done?"line-through opacity-60":""}`}>{task.title}</p>
+            <p className={`text-sm font-semibold text-[#1A2F22] leading-snug ${task.done ? "line-through opacity-60" : ""}`}>{task.title}</p>
           </div>
-          {task.t&&<p className="text-[10px] text-[#9FB5AD] mt-0.5 font-medium">{task.t}</p>}
-          {task.desc&&<p className="text-xs text-[#5A7368] mt-1 leading-relaxed">{task.desc}</p>}
+          {task.t && <p className="text-[10px] text-[#9FB5AD] mt-0.5 font-medium">{task.t}</p>}
+          {task.desc && <p className="text-xs text-[#5A7368] mt-1 leading-relaxed">{task.desc}</p>}
           <div className="flex items-center gap-3 mt-3 flex-wrap">
-   <span className="flex items-center gap-1 text-[10px] font-bold text-[#5A7368] bg-[#F5EFE6] px-2 py-1 rounded-lg border border-[#E8DDD0]">
-     <Clock size={12}/> {task.duration || "Brak"}
-   </span>
-   {task.deadline && (
-     <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-100">
-       Deadline: {task.deadline}
-     </span>
-   )}
-   <span className="text-[10px] font-bold text-[#1E5C36] bg-[#E8F4ED] px-2 py-1 rounded-lg border border-[#2D9E6B]/20">
-     Trudność: {task.difficulty || 1}/5
-   </span>
-   <PBadge p={task.p}/>
-</div>
+            <span className="flex items-center gap-1 text-[10px] font-bold text-[#5A7368] bg-[#F5EFE6] px-2 py-1 rounded-lg border border-[#E8DDD0]">
+              <Clock size={12} /> {task.duration || "Brak"}
+            </span>
+            {task.deadline && (
+              <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg border border-red-100">
+                Deadline: {task.deadline}
+              </span>
+            )}
+            <span className="text-[10px] font-bold text-[#1E5C36] bg-[#E8F4ED] px-2 py-1 rounded-lg border border-[#2D9E6B]/20">
+              Trudność: {task.difficulty || 1}/5
+            </span>
+            <PBadge p={task.p} />
+          </div>
         </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
           {!task.done && (
             <button onClick={() => onFocus(task)} title="Rozpocznij Głębokie Skupienie" className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm">
-              <Play size={14} className="ml-0.5"/>
+              <Play size={14} className="ml-0.5" />
             </button>
           )}
           {/* NOWY PRZYCISK EDYCJI */}
           <button onClick={() => onEdit(task)} title="Edytuj zadanie" className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center shadow-sm">
-            <Pencil size={14}/>
+            <Pencil size={14} />
           </button>
           <button onClick={() => onDelete(task.id)} title="Usuń zadanie" className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm">
-            <Trash2 size={14}/>
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
@@ -714,10 +690,12 @@ function TaskCard({task,onToggle, onFocus, onDelete, onEdit})  {
 // ═══════════════════════════════════════════════════
 //  MODALS & JOURNAL
 // ═══════════════════════════════════════════════════
-function TaskModal({onClose, onSave, taskToEdit}) {
+function TaskModal({ onClose, onSave, taskToEdit }) {
   const [title, setTitle] = useState(taskToEdit?.title || "");
-  const [duration, setDuration] = useState(taskToEdit?.duration ? taskToEdit.duration.replace(" min", "") : "60"); 
-  const [deadline, setDeadline] = useState(taskToEdit?.deadline ? taskToEdit.deadline.replace(" o ", "T") : ""); 
+  const [showTutorial, setShowTutorial] = useState(true);
+
+  const [duration, setDuration] = useState(taskToEdit?.duration ? taskToEdit.duration.replace(" min", "") : "60");
+  const [deadline, setDeadline] = useState(taskToEdit?.deadline ? taskToEdit.deadline.replace(" o ", "T") : "");
   const [difficulty, setDifficulty] = useState(taskToEdit?.difficulty || 3);
   const [p, setP] = useState(taskToEdit?.p || "niski");
   const [desc, setDesc] = useState(taskToEdit?.desc || "");
@@ -725,30 +703,30 @@ function TaskModal({onClose, onSave, taskToEdit}) {
   const [isLocked, setIsLocked] = useState(taskToEdit?.isLocked || false);
   const [showLockPanel, setShowLockPanel] = useState(false);
   const [lockDateTime, setLockDateTime] = useState(taskToEdit?.lockDateTime || "");
-  const [recurrence, setRecurrence]=useState(taskToEdit?.recurrence || "jednorazowo");
-  const [recurrenceEnd, setRecurrenceEnd]=useState(taskToEdit?.recurrenceEnd || "");
-  
+  const [recurrence, setRecurrence] = useState(taskToEdit?.recurrence || "jednorazowo");
+  const [recurrenceEnd, setRecurrenceEnd] = useState(taskToEdit?.recurrenceEnd || "");
+
   const submit = () => {
-    if(!title) return;
-    
+    if (!title) return;
+
     const weight = Math.min(10, Math.round((difficulty * 1.5) + (parseInt(duration || 0) / 60)));
 
     let timeString = "";
     if (isLocked && lockDateTime) {
       const d = new Date(lockDateTime);
-      const timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const dateStr = d.toLocaleDateString();
       timeString = `🔒 ${timeStr} (${dateStr})`;
-      
+
       if (recurrence !== "jednorazowo") {
         if (recurrence === "co tydzień") {
-          const dayOfWeek = d.getDay() === 0 ? 6 : d.getDay() - 1; 
+          const dayOfWeek = d.getDay() === 0 ? 6 : d.getDay() - 1;
           const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
           timeString += ` 🔁 co tydzień ${daysArr[dayOfWeek]}`;
         } else {
           timeString += ` 🔁 ${recurrence}`;
         }
-        
+
         if (recurrenceEnd) {
           timeString += ` 🛑 do ${recurrenceEnd}`;
         }
@@ -757,11 +735,11 @@ function TaskModal({onClose, onSave, taskToEdit}) {
 
     onSave({
       id: taskToEdit?.id,
-      title, 
-      p, 
-      cat: "praca", 
+      title,
+      p,
+      cat: "praca",
       w: weight,
-      t: timeString, 
+      t: timeString,
       duration: duration ? `${duration} min` : "",
       deadline: deadline ? deadline.replace("T", " o ") : "",
       difficulty,
@@ -773,127 +751,159 @@ function TaskModal({onClose, onSave, taskToEdit}) {
 
   return (
     <div className="fixed inset-0 z-[700] flex items-center justify-center bg-[#1A2F22]/40 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-white rounded-[3rem] shadow-2xl p-10 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20" onClick={e=>e.stopPropagation()}>
+      <div className="bg-white rounded-[3rem] shadow-2xl p-10 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-8">
-           <h3 className="text-3xl font-bold text-[#1A2F22]">{taskToEdit ? "Edytuj zadanie" : "Nowe zadanie"}</h3>
-           <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={28} className="text-[#1A2F22]"/></button>
+          <h3 className="text-3xl font-bold text-[#1A2F22]">{taskToEdit ? "Edytuj zadanie" : "Nowe zadanie"}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={28} className="text-[#1A2F22]" /></button>
         </div>
 
         <div className="space-y-6">
-           <div>
-             <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block tracking-widest">Co masz do zrobienia?</label>
-             <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Wpisz nazwę zadania..." className="w-full px-6 py-4 rounded-2xl border-2 border-[#E8DDD0] outline-none focus:border-[#2D9E6B] transition-all text-lg font-medium"/>
-           </div>
-           
-           <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block">Szacowany czas</label>
-                <div className="relative">
-                  <input type="number" value={duration} onChange={e=>setDuration(e.target.value)} placeholder="Np. 45" className="w-full px-4 py-3 rounded-xl border-2 border-[#E8DDD0] text-sm pr-12 outline-none focus:border-[#2D9E6B]"/>
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#9FB5AD]">MIN</span>
-                </div>
-              </div>
-             <div>
-                <label className={`text-xs font-black uppercase mb-2 block tracking-widest transition-all ${isLocked ? 'text-gray-400 line-through' : 'text-red-500'}`}>Deadline</label>
-                <input 
-                  type="datetime-local" 
-                  value={deadline} 
-                  onChange={e=>setDeadline(e.target.value)} 
-                  disabled={isLocked}
-                  className={`w-full px-4 py-3 rounded-xl border-2 text-sm outline-none transition-all ${isLocked ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed line-through opacity-70' : 'border-red-100 focus:border-red-400 bg-white'}`}
-                />
-              </div>
-           </div>
+          <div>
+            <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block tracking-widest">Co masz do zrobienia?</label>
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Wpisz nazwę zadania..." className="w-full px-6 py-4 rounded-2xl border-2 border-[#E8DDD0] outline-none focus:border-[#2D9E6B] transition-all text-lg font-medium" />
+          </div>
 
-           <div>
-              <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block flex justify-between">
-                Wysiłek umysłowy <span>{difficulty} / 5</span>
-              </label>
-              <input type="range" min="1" max="5" value={difficulty} onChange={e=>setDifficulty(parseInt(e.target.value))} className="w-full h-2 bg-[#E8DDD0] rounded-lg appearance-none cursor-pointer accent-[#1E5C36]"/>
-              <div className="flex justify-between text-[9px] font-black text-[#9FB5AD] mt-2 px-1">
-                <span>NISKI</span>
-                <span>BARDZO WYSOKI</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block">Szacowany czas</label>
+              <div className="relative">
+                <input type="number" value={duration} onChange={e => setDuration(e.target.value)} placeholder="Np. 45" className="w-full px-4 py-3 rounded-xl border-2 border-[#E8DDD0] text-sm pr-12 outline-none focus:border-[#2D9E6B]" />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#9FB5AD]">MIN</span>
               </div>
-           </div>
+            </div>
+            <div>
+              <label className={`text-xs font-black uppercase mb-2 block tracking-widest transition-all ${isLocked ? 'text-gray-400 line-through' : 'text-red-500'}`}>Deadline</label>
+              <input
+                type="datetime-local"
+                value={deadline}
+                onChange={e => setDeadline(e.target.value)}
+                disabled={isLocked}
+                className={`w-full px-4 py-3 rounded-xl border-2 text-sm outline-none transition-all ${isLocked ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed line-through opacity-70' : 'border-red-100 focus:border-red-400 bg-white'}`}
+              />
+            </div>
+          </div>
 
           <div>
-             <label className="text-xs font-black uppercase text-[#5A7368] mb-3 block tracking-widest">Ważność</label>
-             <div className="flex w-full gap-2">
-               {PRIOS.map(pr => {
-                 const isActive = p === pr.id;
-                 let activeClass = "border-[#1E5C36] bg-[#E8F4ED] text-[#1E5C36]"; // Zielony (niski priorytet)
-                 
-                 if (pr.id === "sredni") {
-                   activeClass = "border-amber-500 bg-amber-50 text-amber-600"; // Żółty/Pomarańczowy (średni priorytet)
-                 } else if (pr.id === "wysoki") {
-                   activeClass = "border-red-500 bg-red-50 text-red-600"; // Czerwony (wysoki priorytet)
-                 }
-                 
-                 return (
-                   <button 
-                     key={pr.id} 
-                     onClick={()=>setP(pr.id)} 
-                     className={`flex-1 px-1 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all border-2 whitespace-nowrap overflow-hidden text-ellipsis ${isActive ? activeClass : "border-transparent bg-slate-50 text-slate-400 hover:border-[#E8DDD0]"}`}
-                   >
-                     {pr.label}
-                   </button>
-                 );
-               })}
-             </div>
-           </div>
+            <label className="text-xs font-black uppercase text-[#5A7368] mb-2 block flex justify-between">
+              Wysiłek umysłowy <span>{difficulty} / 5</span>
+            </label>
+            <input type="range" min="1" max="5" value={difficulty} onChange={e => setDifficulty(parseInt(e.target.value))} className="w-full h-2 bg-[#E8DDD0] rounded-lg appearance-none cursor-pointer accent-[#1E5C36]" />
+            <div className="flex justify-between text-[9px] font-black text-[#9FB5AD] mt-2 px-1">
+              <span>NISKI</span>
+              <span>BARDZO WYSOKI</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-black uppercase text-[#5A7368] mb-3 block tracking-widest">Ważność</label>
+            <div className="flex w-full gap-2">
+              {PRIOS.map(pr => {
+                const isActive = p === pr.id;
+                let activeClass = "border-[#1E5C36] bg-[#E8F4ED] text-[#1E5C36]"; // Zielony (niski priorytet)
+
+                if (pr.id === "sredni") {
+                  activeClass = "border-amber-500 bg-amber-50 text-amber-600"; // Żółty/Pomarańczowy (średni priorytet)
+                } else if (pr.id === "wysoki") {
+                  activeClass = "border-red-500 bg-red-50 text-red-600"; // Czerwony (wysoki priorytet)
+                }
+
+                return (
+                  <button
+                    key={pr.id}
+                    onClick={() => setP(pr.id)}
+                    className={`flex-1 px-1 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase transition-all border-2 whitespace-nowrap overflow-hidden text-ellipsis ${isActive ? activeClass : "border-transparent bg-slate-50 text-slate-400 hover:border-[#E8DDD0]"}`}
+                  >
+                    {pr.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-end justify-between gap-4 mt-10 relative">
-          
-          <div className="relative">
-            <button 
-              onClick={() => setShowLockPanel(!showLockPanel)}
-              className={`flex items-center gap-2 px-4 py-4 rounded-2xl font-bold transition-all text-sm border-2 ${isLocked ? 'bg-[#E8F4ED] text-[#1E5C36] border-[#1E5C36] shadow-md' : 'bg-white text-[#9FB5AD] border-[#E8DDD0] hover:border-[#9FB5AD]'}`}
-            >
-              <span className="text-xl leading-none">{isLocked ? "🔒" : "🔓"}</span>
-            </button>
 
-            {showLockPanel && (
-              <div className="absolute bottom-[115%] left-0 w-72 bg-white rounded-3xl shadow-2xl border border-[#E8DDD0] p-6 z-50 animate-in slide-in-from-bottom-2">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-sm font-bold text-[#1A2F22]">Zablokuj w kalendarzu</h4>
-                  <button onClick={() => setShowLockPanel(false)}><X size={16} className="text-[#9FB5AD] hover:text-red-500"/></button>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Dokładna data i godzina</label>
-                    <input type="datetime-local" value={lockDateTime} onChange={e=>setLockDateTime(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B]"/>
-                  </div>
-                 <div>
-                    <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Cykliczność (Google Style)</label>
-                    <select value={recurrence} onChange={e=>setRecurrence(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B] bg-white cursor-pointer">
-                      <option value="jednorazowo">Tylko raz</option>
-                      <option value="codziennie">Codziennie</option>
-                      <option value="w dni robocze">W dni robocze (Pon-Pt)</option>
-                      <option value="co tydzień">Co tydzień</option>
-                    </select>
-                  </div>
-                  {recurrence !== "jednorazowo" && (
-                    <div>
-                      <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Zakończ cykl (opcjonalnie)</label>
-                      <input type="date" value={recurrenceEnd} onChange={e=>setRecurrenceEnd(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B] bg-white"/>
-                    </div>
-                  )}
+          {/* NOWY KONTENER NA KŁÓDKĘ I DYMEK TUTORIALOWY */}
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              {/* 1. PRZYCISK KŁÓDKI */}
+              <button
+                onClick={() => setShowLockPanel(!showLockPanel)}
+                className={`flex items-center gap-2 px-4 py-4 rounded-2xl font-bold transition-all text-sm border-2 relative z-10 ${isLocked ? 'bg-[#E8F4ED] text-[#1E5C36] border-[#1E5C36] shadow-md' : 'bg-white text-[#9FB5AD] border-[#E8DDD0] hover:border-[#9FB5AD]'}`}
+              >
+                <span className="text-xl leading-none">{isLocked ? "🔒" : "🔓"}</span>
+              </button>
+
+              {/* 2. DYMEK KOMIKSOWY - Pojawia się NAD kłódką, aby okno go nie ucinało */}
+              {showTutorial && (
+                <div className="absolute bottom-full left-0 mb-4 w-72 p-5 bg-[#1A2F22] text-white rounded-[2rem] shadow-2xl z-[9999] animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  {/* Przycisk X do zamknięcia dymka */}
                   <button
-                    onClick={() => { setIsLocked(true); setShowLockPanel(false); }} 
-                    className="w-full py-2 bg-[#2D9E6B] text-white rounded-xl font-bold text-xs hover:bg-[#1E5C36] transition-all"
+                    onClick={(e) => { e.stopPropagation(); setShowTutorial(false); }}
+                    className="absolute top-3 right-4 p-1 hover:bg-white/10 rounded-full transition-all cursor-pointer"
                   >
-                    Zastosuj kłódkę
+                    <X size={14} className="text-[#2D9E6B]" />
                   </button>
-                  {isLocked && (
-                    <button onClick={() => { setIsLocked(false); setLockDateTime(""); setShowLockPanel(false); }} className="w-full py-2 text-red-500 rounded-xl font-bold text-xs hover:bg-red-50 transition-all mt-1">
-                      Usuń blokadę
-                    </button>
-                  )}
+
+                  <div className="pr-4">
+                    <p className="text-[11px] leading-relaxed mb-2">
+                      <strong className="text-[#2D9E6B] block mb-0.5">Deadline:</strong>
+                      To informacja, do kiedy musisz skończyć. Aplikacja sama ułoży plan.
+                    </p>
+                    <p className="text-[11px] leading-relaxed">
+                      <strong className="text-amber-400 block mb-0.5">Kłódka (Blokada):</strong>
+                      Sztywno rezerwuje godziny. Nic innego się w ten czas nie wciśnie.
+                    </p>
+                  </div>
+
+                  {/* Trójkątny ogon dymka skierowany w DÓŁ, prosto na kłódkę */}
+                  <div className="absolute top-full left-6 w-0 h-0 border-x-[10px] border-x-transparent border-t-[12px] border-t-[#1A2F22]"></div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* 3. ORYGINALNY PANEL USTAWIANIA CZASU */}
+              {showLockPanel && (
+                <div className="absolute bottom-[115%] left-0 w-72 bg-white rounded-3xl shadow-2xl border border-[#E8DDD0] p-6 z-50 animate-in slide-in-from-bottom-2">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-sm font-bold text-[#1A2F22]">Zablokuj w kalendarzu</h4>
+                    <button onClick={() => setShowLockPanel(false)}><X size={16} className="text-[#9FB5AD] hover:text-red-500" /></button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Dokładna data i godzina</label>
+                      <input type="datetime-local" value={lockDateTime} onChange={e => setLockDateTime(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B]" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Cykliczność (Google Style)</label>
+                      <select value={recurrence} onChange={e => setRecurrence(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B] bg-white cursor-pointer">
+                        <option value="jednorazowo">Tylko raz</option>
+                        <option value="codziennie">Codziennie</option>
+                        <option value="w dni robocze">W dni robocze (Pon-Pt)</option>
+                        <option value="co tydzień">Co tydzień</option>
+                      </select>
+                    </div>
+                    {recurrence !== "jednorazowo" && (
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-[#5A7368] mb-1 block">Zakończ cykl (opcjonalnie)</label>
+                        <input type="date" value={recurrenceEnd} onChange={e => setRecurrenceEnd(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-[#E8DDD0] text-sm outline-none focus:border-[#2D9E6B] bg-white" />
+                      </div>
+                    )}
+                    <button
+                      onClick={() => { setIsLocked(true); setShowLockPanel(false); }}
+                      className="w-full py-2 bg-[#2D9E6B] text-white rounded-xl font-bold text-xs hover:bg-[#1E5C36] transition-all"
+                    >
+                      Zastosuj kłódkę
+                    </button>
+                    {isLocked && (
+                      <button onClick={() => { setIsLocked(false); setLockDateTime(""); setShowLockPanel(false); }} className="w-full py-2 text-red-500 rounded-xl font-bold text-xs hover:bg-red-50 transition-all mt-1">
+                        Usuń blokadę
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-1 gap-2">
@@ -909,50 +919,50 @@ function TaskModal({onClose, onSave, taskToEdit}) {
 }
 
 
-function MoodModal({onClose, onAdd, defaultNote = "", forced = false}) {
-  const [sel,setSel] = useState(3); // <--- Zmiana domyślnego indeksu na 3
+function MoodModal({ onClose, onAdd, defaultNote = "", forced = false }) {
+  const [sel, setSel] = useState(3); // <--- Zmiana domyślnego indeksu na 3
   const [note, setNote] = useState(defaultNote);
   const today = new Date();
   const dateStr = today.toISOString().split("T")[0];
-  const timeStr = today.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-  
+  const timeStr = today.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#1A2F22]/60 backdrop-blur-sm p-4" onClick={!forced ? onClose : undefined}>
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/20 animate-in zoom-in-95 duration-300" onClick={e=>e.stopPropagation()}>
+      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-white/20 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-bold text-[#1A2F22] text-xl">Zarejestruj swój nastrój</h3>
-          {!forced && <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={20} className="text-[#9FB5AD]"/></button>}
+          {!forced && <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all"><X size={20} className="text-[#9FB5AD]" /></button>}
         </div>
-        
+
         <p className="text-sm font-bold text-[#1A2F22] mb-3">Jak się czujesz?</p>
-        
+
         <div className="flex gap-3 mb-6">
           <div className="flex-1 opacity-50 cursor-not-allowed" title="Opcja zablokowana w tej wersji">
             <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-1">W tym momencie</p>
             <div className="px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm flex justify-between items-center text-gray-500">
-              Dzisiaj <ChevronDown size={14}/>
+              Dzisiaj <ChevronDown size={14} />
             </div>
           </div>
           <div className="flex-1">
             <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-1">Godzina</p>
             <div className="px-4 py-3 bg-[#F5EFE6] border border-[#E8DDD0] rounded-xl text-sm font-bold text-[#1E5C36] flex items-center gap-2">
-              <Clock size={14}/> {timeStr}
+              <Clock size={14} /> {timeStr}
             </div>
           </div>
         </div>
 
         <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-3">Twój nastrój</p>
         <div className="flex justify-between mb-2">
-          {EMOJIS.map((e,i)=>(
-            <button key={i} onClick={()=>setSel(i)} className={`w-12 h-12 text-2xl rounded-2xl transition-all duration-150 ${sel===i?"ring-2 ring-[#1E5C36] bg-[#E8F4ED] scale-110 shadow-md":"hover:bg-[#F5EFE6] hover:scale-105"}`}>{e}</button>
+          {EMOJIS.map((e, i) => (
+            <button key={i} onClick={() => setSel(i)} className={`w-12 h-12 text-2xl rounded-2xl transition-all duration-150 ${sel === i ? "ring-2 ring-[#1E5C36] bg-[#E8F4ED] scale-110 shadow-md" : "hover:bg-[#F5EFE6] hover:scale-105"}`}>{e}</button>
           ))}
         </div>
         <p className="text-center text-xs font-bold text-[#1E5C36] mb-6">{MOOD_L[sel]}</p>
-        
-        <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-2">Notatka z dnia (opcjonalnie)</p>
-        <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Zapisz, co wpłynęło na Twój nastrój (np. ciężki wykład, sukces)..." rows={2} className="w-full px-4 py-3 rounded-xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] bg-white resize-none mb-6 text-[#1A2F22] leading-relaxed"/>
 
-        <button onClick={()=>{onAdd({id:Date.now(),d:dateStr,v:sel,note});if(!forced)onClose();}} className="w-full py-4 bg-[#1E5C36] text-white rounded-2xl font-bold text-sm hover:bg-[#164a2c] transition-all shadow-xl shadow-green-900/20 active:scale-[0.98]">
+        <p className="text-[10px] font-bold text-[#5A7368] uppercase tracking-widest mb-2">Notatka z dnia (opcjonalnie)</p>
+        <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Zapisz, co wpłynęło na Twój nastrój (np. ciężki wykład, sukces)..." rows={2} className="w-full px-4 py-3 rounded-xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] bg-white resize-none mb-6 text-[#1A2F22] leading-relaxed" />
+
+        <button onClick={() => { onAdd({ id: Date.now(), d: dateStr, v: sel, note }); if (!forced) onClose(); }} className="w-full py-4 bg-[#1E5C36] text-white rounded-2xl font-bold text-sm hover:bg-[#164a2c] transition-all shadow-xl shadow-green-900/20 active:scale-[0.98]">
           Zapisz i kontynuuj
         </button>
       </div>
@@ -960,25 +970,7 @@ function MoodModal({onClose, onAdd, defaultNote = "", forced = false}) {
   );
 }
 
-function Journal({onAlert}) {
-  const [text,setText]=useState("");
-  const [det,setDet]=useState(false);
-  const handle=v=>{
-    setText(v);
-    const hit=BURNOUT_KW.some(kw=>v.toLowerCase().includes(kw));
-    if(hit&&!det){setDet(true);onAlert();}
-    if(!hit)setDet(false);
-  };
-  return (
-    <div className={`rounded-2xl border-2 transition-all duration-300 p-4 ${det?"border-red-300 bg-red-50 shadow-md shadow-red-100":"border-[#E8DDD0] bg-white"}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <BookOpen size={15} className={det?"text-red-500":"text-[#2D9E6B]"}/>
-        <span className="text-sm font-bold text-[#1A2F22]">Dziennik dnia</span>
-      </div>
-      <textarea value={text} onChange={e=>handle(e.target.value)} placeholder="Opisz swoje przemyślenia..." rows={3} className="w-full text-sm bg-transparent resize-none focus:outline-none placeholder:text-[#C4BBAF] text-[#1A2F22] leading-relaxed"/>
-    </div>
-  );
-}
+/* Usunięto komponent Journal zgodnie z założeniami odchudzonego MVP */
 
 // ═══════════════════════════════════════════════════
 //  STREAK PLANT (OBLICZENIA NA ŻYWO - NAPRAWIONE)
@@ -987,8 +979,8 @@ function StreakPlant({ tasks }) {
   const total = tasks.length;
   const done = tasks.filter(t => t.done).length;
   const progress = total === 0 ? 0 : Math.round((done / total) * 100);
-  
-  const H = {fontFamily:"'Lora',serif"};
+
+  const H = { fontFamily: "'Lora',serif" };
   const plantHeight = Math.max(15, progress);
 
   return (
@@ -1000,13 +992,13 @@ function StreakPlant({ tasks }) {
 
       <div className="relative h-64 bg-[#F5EFE6]/50 rounded-[2rem] flex items-end justify-center pb-6 mb-6 overflow-hidden border border-[#E8DDD0]">
         <div className="absolute bottom-0 w-28 h-14 bg-[#5A7368] rounded-b-2xl rounded-t-sm z-20 flex flex-col items-center">
-           <div className="w-32 h-4 bg-[#3E5249] rounded-sm -mt-1 shadow-md" />
+          <div className="w-32 h-4 bg-[#3E5249] rounded-sm -mt-1 shadow-md" />
         </div>
-        <div 
+        <div
           className="w-14 bg-[#2D9E6B] rounded-t-[2rem] transition-all duration-1000 ease-out relative z-10 flex flex-col items-center shadow-inner"
           style={{ height: `${plantHeight}%`, maxHeight: '80%', bottom: '30px' }}
         >
-            <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(90deg,transparent,transparent_4px,#1A2F22_4px,#1A2F22_6px)] rounded-t-[2rem]" />
+          <div className="absolute inset-0 opacity-20 bg-[repeating-linear-gradient(90deg,transparent,transparent_4px,#1A2F22_4px,#1A2F22_6px)] rounded-t-[2rem]" />
         </div>
         <div className={`absolute top-8 text-4xl transition-all duration-700 z-30 ${progress === 100 ? 'opacity-100 scale-100 animate-bounce' : 'opacity-0 scale-50'}`}>
           🌸
@@ -1019,20 +1011,20 @@ function StreakPlant({ tasks }) {
           <span translate="no" className="text-xs font-bold text-[#1E5C36]">{progress}% ({done}/{total})</span>
         </div>
         <div className="h-2.5 bg-[#F5EFE6] rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-[#2D9E6B] to-[#1E5C36] rounded-full transition-all duration-1000 ease-out" style={{width:`${progress}%`}}/>
+          <div className="h-full bg-gradient-to-r from-[#2D9E6B] to-[#1E5C36] rounded-full transition-all duration-1000 ease-out" style={{ width: `${progress}%` }} />
         </div>
         {progress === 100 && (
           <div className="bg-[#E8F4ED] rounded-2xl px-3 py-2 mt-4 flex items-start gap-2 animate-fade-in-up">
-            <CheckCircle size={14} className="text-[#2D9E6B] flex-shrink-0 mt-0.5"/>
+            <CheckCircle size={14} className="text-[#2D9E6B] flex-shrink-0 mt-0.5" />
             <p className="text-xs text-[#1E5C36] font-medium leading-relaxed">
               Świetna robota! Roślinka zakwitła. Odpocznij!
             </p>
           </div>
         )}
       </div>
-      
+
       <button className="mt-4 w-full py-2 text-xs font-bold text-[#5A7368] border-2 border-[#E8DDD0] rounded-xl flex items-center justify-center gap-2 hover:bg-[#F5EFE6] transition-all">
-        <RefreshCw size={12}/> Zmień roślinkę
+        <RefreshCw size={12} /> Zmień roślinkę
       </button>
     </div>
   );
@@ -1044,19 +1036,19 @@ function StreakPlant({ tasks }) {
 // ═══════════════════════════════════════════════════
 //  DASHBOARD VIEW (ZAMROŻONY PLAN Z GUZIKIEM GENERUJ)
 // ═══════════════════════════════════════════════════
-function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onDelete, onAlert, onFocusTask, loading, onGeneratePlan}) {
-  const H = {fontFamily: "'Lora', serif"};
+function DashboardView({ tasks, moods, onToggle, onOpenTaskModal, onEditTask, onDelete, onAlert, onFocusTask, loading, onGeneratePlan }) {
+  const H = { fontFamily: "'Lora', serif" };
   const [showBacklog, setShowBacklog] = useState(false);
-  
-  if(loading) return <SkeletonScreen/>;
+
+  if (loading) return <SkeletonScreen />;
 
   const timelineStart = 6;
-  const scheduled = tasks.filter(t => t.sMins !== null && t.sMins !== undefined).sort((a,b) => a.sMins - b.sMins);
-  
+  const scheduled = tasks.filter(t => t.sMins !== null && t.sMins !== undefined).sort((a, b) => a.sMins - b.sMins);
+
   // Zabezpieczony Backlog (tylko na dziś)
-  const backlog = tasks.filter(t => 
-    (t.sMins === null || t.sMins === undefined) && 
-    (!t.isLocked || !t.t || checkIsToday(t.t)) 
+  const backlog = tasks.filter(t =>
+    (t.sMins === null || t.sMins === undefined) &&
+    (!t.isLocked || !t.t || checkIsToday(t.t))
   );
 
   const timelineWithGaps = [];
@@ -1064,7 +1056,7 @@ function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onD
     timelineWithGaps.push(t);
     if (i < scheduled.length - 1) {
       const currEnd = Math.max(t.eMins, t.sMins + (t.duration ? parseInt(t.duration) : 45));
-      const nextStart = scheduled[i+1].sMins;
+      const nextStart = scheduled[i + 1].sMins;
       const gap = nextStart - currEnd;
       if (gap >= 15) {
         timelineWithGaps.push({ id: `gap-${i}`, isVisualGap: true, title: "Czas na regenerację", duration: `${gap} min`, sMins: currEnd, eMins: nextStart });
@@ -1072,11 +1064,11 @@ function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onD
     }
   });
 
-  const lastTaskMins = scheduled.length > 0 ? scheduled[scheduled.length - 1].eMins : (16*60);
+  const lastTaskMins = scheduled.length > 0 ? scheduled[scheduled.length - 1].eMins : (16 * 60);
   const timelineEndHour = Math.max(18, Math.ceil(lastTaskMins / 60) + 1);
   const hours = Array.from({ length: timelineEndHour - timelineStart + 1 }, (_, i) => timelineStart + i);
   const minsToRem = (mins) => (mins / 60) * 8;
-  const formatTime = (mins) => `${Math.floor(mins/60)}:${(mins%60).toString().padStart(2,'0')}`;
+  const formatTime = (mins) => `${Math.floor(mins / 60)}:${(mins % 60).toString().padStart(2, '0')}`;
 
   return (
     <div className="p-8 max-w-6xl mx-auto w-full pb-32">
@@ -1085,10 +1077,10 @@ function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onD
         <div className="flex gap-3">
           {/* NOWY GUZIK GENEROWANIA */}
           <button onClick={onGeneratePlan} className="flex items-center gap-2 px-5 py-2.5 bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]/30 rounded-xl text-sm font-bold hover:bg-[#2D9E6B] hover:text-white transition-all shadow-sm active:scale-95">
-            <RefreshCw size={18}/> Generuj plan
+            <RefreshCw size={18} /> Generuj plan
           </button>
           <button onClick={onOpenTaskModal} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8DDD0] text-[#1A2F22] rounded-xl text-sm font-bold hover:bg-[#F5EFE6] hover:border-[#2D9E6B] transition-all shadow-sm active:scale-95">
-            Dodaj zadanie <Plus size={18}/>
+            Dodaj zadanie <Plus size={18} />
           </button>
         </div>
       </div>
@@ -1108,13 +1100,13 @@ function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onD
               const topRem = minsToRem(t.sMins - (timelineStart * 60));
               const durMins = t.duration ? parseInt(t.duration) : 45;
               const heightRem = minsToRem(Math.max(durMins, 45));
-              
+
               if (t.isVisualGap) {
                 return (
                   <div key={t.id} className="absolute left-20 right-0 flex items-center justify-center z-10 pointer-events-none" style={{ top: `${topRem}rem`, height: `${minsToRem(t.eMins - t.sMins)}rem` }}>
                     <div className="w-full border-t-2 border-dashed border-[#2D9E6B]/30 flex items-center justify-center relative">
                       <div className="absolute bg-[#FAFAFA] px-4 py-1.5 rounded-full border border-[#2D9E6B]/20 flex items-center gap-2 shadow-sm">
-                        <Leaf size={12} className="text-[#2D9E6B]"/>
+                        <Leaf size={12} className="text-[#2D9E6B]" />
                         <span className="text-[9px] font-black uppercase tracking-widest text-[#5A7368]">{t.title} ({t.duration})</span>
                       </div>
                     </div>
@@ -1135,9 +1127,9 @@ function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onD
                       </div>
                     </div>
                     <div className={`absolute top-0 right-0 flex items-center gap-1.5 transition-all z-30 ${t.done ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        {!t.done && <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Play size={14} className="ml-0.5"/></button>}
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Trash2 size={14}/></button>
-                        <button onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}><Check size={14}/></button>
+                      {!t.done && <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Play size={14} className="ml-0.5" /></button>}
+                      <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Trash2 size={14} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}><Check size={14} /></button>
                     </div>
                     {t.isLocked && <div className={`absolute bottom-0 left-0 flex items-center justify-center w-[22px] h-[22px] rounded border border-[#E8DDD0] bg-white shadow-sm z-30 ${t.done ? 'opacity-50' : ''}`}><Lock size={12} strokeWidth={2.5} className="text-[#5A7368]" /></div>}
                   </div>
@@ -1146,7 +1138,9 @@ function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onD
             })}
           </div>
         </div>
-        <div className="xl:col-span-4 space-y-6 pt-16"><StreakPlant tasks={scheduled} /><Journal onAlert={onAlert} /></div>
+        <div className="xl:col-span-4 space-y-6 pt-16">
+          <StreakPlant tasks={scheduled} />
+        </div>
       </div>
 
       {backlog.length > 0 && (
@@ -1154,28 +1148,28 @@ function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onD
           <div className="bg-white border-2 border-[#E8DDD0] shadow-2xl rounded-t-[2.5rem] w-full max-w-2xl p-6 pointer-events-auto transition-all">
             <button onClick={() => setShowBacklog(!showBacklog)} className="w-full flex items-center justify-between mb-4 group">
               <div className="flex items-center gap-3">
-                <div className="bg-amber-50 text-amber-600 p-2 rounded-xl"><Plus size={20}/></div>
+                <div className="bg-amber-50 text-amber-600 p-2 rounded-xl"><Plus size={20} /></div>
                 <div className="text-left">
                   <h3 className="font-bold text-[#1A2F22] text-sm">Zadania poza planem ({backlog.length})</h3>
                   <p className="text-[10px] text-[#5A7368]">Oczekują na kliknięcie "Generuj plan".</p>
                 </div>
               </div>
-              <div className={`p-2 rounded-full bg-slate-50 transition-transform ${showBacklog ? 'rotate-180' : ''}`}><ChevronDown size={20}/></div>
+              <div className={`p-2 rounded-full bg-slate-50 transition-transform ${showBacklog ? 'rotate-180' : ''}`}><ChevronDown size={20} /></div>
             </button>
             {showBacklog && (
               <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {backlog.map(t => (
-                  <div key={t.id} className="p-5 rounded-2xl border bg-[#F9FAFB] border-[#E8DDD0] hover:border-[#2D9E6B] transition-all cursor-pointer group relative flex flex-col justify-between" onClick={() => onEditTask(t)} style={{minHeight: '5.5rem'}}>
+                  <div key={t.id} className="p-5 rounded-2xl border bg-[#F9FAFB] border-[#E8DDD0] hover:border-[#2D9E6B] transition-all cursor-pointer group relative flex flex-col justify-between" onClick={() => onEditTask(t)} style={{ minHeight: '5.5rem' }}>
                     <div className="flex items-start gap-4 pr-28">
-                       <div className={`mt-0.5 flex-shrink-0 flex items-center gap-1 ${t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                         <Star size={18} fill="currentColor" strokeWidth={1} />
-                         {/* WYKRZYKNIK JEŚLI ZABLOKOWANE ALE W BACKLOGU */}
-                         {t.isLocked && <span className="text-red-600 font-black text-xs animate-pulse">!</span>}
-                       </div>
-                       <div className="flex flex-col gap-1.5"><span className="text-sm font-bold text-[#1A2F22]">{t.title}</span><span className="text-[10px] font-bold text-[#5A7368]">{t.duration}</span></div>
+                      <div className={`mt-0.5 flex-shrink-0 flex items-center gap-1 ${t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        <Star size={18} fill="currentColor" strokeWidth={1} />
+                        {/* WYKRZYKNIK JEŚLI ZABLOKOWANE ALE W BACKLOGU */}
+                        {t.isLocked && <span className="text-red-600 font-black text-xs animate-pulse">!</span>}
+                      </div>
+                      <div className="flex flex-col gap-1.5"><span className="text-sm font-bold text-[#1A2F22]">{t.title}</span><span className="text-[10px] font-bold text-[#5A7368]">{t.duration}</span></div>
                     </div>
                     <div className="flex transition-all absolute top-1/2 -translate-y-1/2 right-6 z-30 opacity-0 group-hover:opacity-100">
-                      <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="w-9 h-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm"><Trash2 size={16}/></button>
+                      <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="w-9 h-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm"><Trash2 size={16} /></button>
                     </div>
                     {t.isLocked && <div title="Sztywny termin zablokowany w kalendarzu" className="absolute bottom-4 left-5 z-30 flex items-center justify-center w-[18px] h-[18px] rounded border border-[#E8DDD0] bg-white shadow-sm"><Lock size={10} strokeWidth={2.5} className="text-[#5A7368]" /></div>}
                   </div>
@@ -1192,36 +1186,36 @@ function DashboardView({tasks, moods, onToggle, onOpenTaskModal, onEditTask, onD
 // ═══════════════════════════════════════════════════
 //  CALENDAR VIEW (ZADANIA ZOSTAJĄ NA MIEJSCU PO PRAWEJ)
 // ═══════════════════════════════════════════════════
-function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, onEditTask, loading })  {
+function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, onEditTask, loading }) {
   const H = { fontFamily: "'Lora', serif" };
   const [search, setSearch] = useState("");
 
   if (loading) return <SkeletonScreen />;
 
-  const hours = Array.from({ length: 16 }, (_, i) => i + 7); 
+  const hours = Array.from({ length: 16 }, (_, i) => i + 7);
 
   const isSameDate = (textString) => {
     if (!textString) return false;
     const txt = textString.toLowerCase();
-    
+
     const selYear = selectedDate.getFullYear();
     const selMonth = selectedDate.getMonth() + 1;
     const selDay = selectedDate.getDate();
-    const selDateOnly = new Date(selYear, selectedDate.getMonth(), selDay); 
-    
+    const selDateOnly = new Date(selYear, selectedDate.getMonth(), selDay);
+
     const endMatch = txt.match(/🛑 do (\d{4})-(\d{1,2})-(\d{1,2})/);
     if (endMatch) {
-        const endDate = new Date(parseInt(endMatch[1]), parseInt(endMatch[2]) - 1, parseInt(endMatch[3]));
-        if (selDateOnly > endDate) return false; 
+      const endDate = new Date(parseInt(endMatch[1]), parseInt(endMatch[2]) - 1, parseInt(endMatch[3]));
+      if (selDateOnly > endDate) return false;
     }
 
     const startMatch = textString.match(/\((\d{1,2})[\.\/ -](\d{1,2})[\.\/ -](\d{4})\)/);
     if (startMatch && (txt.includes("codziennie") || txt.includes("co tydzień") || txt.includes("w dni robocze"))) {
-        const startDate = new Date(parseInt(startMatch[3]), parseInt(startMatch[2]) - 1, parseInt(startMatch[1]));
-        if (selDateOnly < startDate) return false; 
+      const startDate = new Date(parseInt(startMatch[3]), parseInt(startMatch[2]) - 1, parseInt(startMatch[1]));
+      if (selDateOnly < startDate) return false;
     }
 
-    const dayOfWeek = selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1; 
+    const dayOfWeek = selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1;
     const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
 
     if (txt.includes("codziennie") || txt.includes("każdego dnia")) return true;
@@ -1241,7 +1235,7 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
   };
 
   const timelineTasks = tasks.filter(t => (isSameDate(t.t) || (!t.isLocked && isSameDate(t.deadline))));
-  
+
   const queueTasks = tasks
     .filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase()));
 
@@ -1260,17 +1254,17 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
           {hours.map(h => {
             const tasksInThisHour = timelineTasks.filter(t => {
               let taskHour = -1;
-              if (isSameDate(t.t)) { 
+              if (isSameDate(t.t)) {
                 const match = t.t ? t.t.match(/(\d{1,2}):\d{2}/) : null;
                 taskHour = match ? parseInt(match[1]) : t.hour;
-              } else if (isSameDate(t.deadline)) { 
+              } else if (isSameDate(t.deadline)) {
                 const match = t.deadline.match(/o (\d{1,2}):\d{2}/);
                 if (match) taskHour = parseInt(match[1]);
               }
               return taskHour === h;
             });
 
-           return (
+            return (
               <div key={h} className="flex border-t border-[#F5EFE6] h-[6rem] group">
                 <div className="w-20 -mt-2.5 text-[11px] font-black text-[#9FB5AD] uppercase tracking-tighter z-10">
                   <span className="bg-white pr-2">{h.toString().padStart(2, '0')}:00</span>
@@ -1279,28 +1273,28 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
                   {tasksInThisHour.map((t, index) => {
                     const isDeadlineBlock = !isSameDate(t.t) && isSameDate(t.deadline);
                     const match = t.duration ? t.duration.match(/(\d+)/) : null;
-                    const mins = match ? parseInt(match[1]) : 60; 
-                    const heightRem = (mins / 60) * 6; 
-                    
+                    const mins = match ? parseInt(match[1]) : 60;
+                    const heightRem = (mins / 60) * 6;
+
                     return (
-                      <div 
-                        key={t.id} 
-                        style={{ 
-                          height: `${heightRem}rem`, 
-                          minHeight: '3.5rem', 
-                          zIndex: 10 + index, 
-                          width: `calc(100% - ${index * 1.5}rem)`, 
-                          left: `${index * 1.5}rem` 
+                      <div
+                        key={t.id}
+                        style={{
+                          height: `${heightRem}rem`,
+                          minHeight: '3.5rem',
+                          zIndex: 10 + index,
+                          width: `calc(100% - ${index * 1.5}rem)`,
+                          left: `${index * 1.5}rem`
                         }}
                         className={`absolute top-0 border-l-4 rounded-xl p-3 shadow-md hover:shadow-lg transition-all overflow-hidden ${isDeadlineBlock ? 'bg-red-50/95 border-red-400' : 'bg-[#E8F4ED]/95 border-[#2D9E6B]'}`}
                       >
                         <div className="flex justify-between items-start mb-1">
-                           <p className={`text-sm font-bold truncate ${isDeadlineBlock ? 'text-red-700' : 'text-[#1E5C36]'}`}>{t.title}</p>
-                           {isDeadlineBlock ? (
-                             <span className="text-[9px] font-black text-red-500 uppercase tracking-widest hidden sm:block">⚠️ Deadline</span>
-                           ) : (
-                             <span className="text-[9px] font-black text-[#2D9E6B] uppercase tracking-widest hidden sm:block">🔒 Zablokowane</span>
-                           )}
+                          <p className={`text-sm font-bold truncate ${isDeadlineBlock ? 'text-red-700' : 'text-[#1E5C36]'}`}>{t.title}</p>
+                          {isDeadlineBlock ? (
+                            <span className="text-[9px] font-black text-red-500 uppercase tracking-widest hidden sm:block">⚠️ Deadline</span>
+                          ) : (
+                            <span className="text-[9px] font-black text-[#2D9E6B] uppercase tracking-widest hidden sm:block">🔒 Zablokowane</span>
+                          )}
                         </div>
                         <p className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${isDeadlineBlock ? 'text-red-600/70' : 'text-[#5A7368]'}`}>
                           {t.duration || "60 min"}
@@ -1318,15 +1312,15 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
       {/* PRAWA KOLUMNA: Pełna baza zadań z wyszukiwarką */}
       <div className="w-96 bg-[#FAFAFA] p-8 overflow-y-auto hidden lg:block pb-24">
         <h3 style={H} className="text-xl font-bold text-[#1A2F22] mb-6 flex items-center gap-2">
-          <Target size={20} className="text-[#2D9E6B]"/> Wszystkie zadania
+          <Target size={20} className="text-[#2D9E6B]" /> Wszystkie zadania
         </h3>
-        
+
         {/* WYSZUKIWARKA */}
         <div className="relative mb-6">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9FB5AD]"/>
-          <input 
-            type="text" 
-            placeholder="Szukaj zadania..." 
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9FB5AD]" />
+          <input
+            type="text"
+            placeholder="Szukaj zadania..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-11 pr-4 py-3 rounded-2xl border border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] bg-white transition-all shadow-sm placeholder:text-[#9FB5AD]"
@@ -1337,35 +1331,35 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
           {queueTasks.map(t => {
             const deadlineToday = isSameDate(t.deadline);
             return (
-              <div 
-                key={t.id} 
-                onClick={() => onEditTask(t)} 
+              <div
+                key={t.id}
+                onClick={() => onEditTask(t)}
                 className={`bg-white p-5 rounded-[2rem] border shadow-sm transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-lg ${t.done ? 'opacity-60 grayscale border-gray-200' : (deadlineToday ? 'border-red-200 hover:border-red-400' : 'border-[#E8DDD0] hover:border-[#2D9E6B]')}`}
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
-                    <PBadge p={t.p}/>
-                    {t.isLocked && <Lock size={12} className="text-[#5A7368]" title="Zablokowane w kalendarzu"/>}
+                    <PBadge p={t.p} />
+                    {t.isLocked && <Lock size={12} className="text-[#5A7368]" title="Zablokowane w kalendarzu" />}
                   </div>
                   {deadlineToday && !t.done && <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg border border-red-100">W tym dniu!</span>}
                   {!deadlineToday && t.deadline && !t.done && <span className="text-[10px] font-bold text-[#5A7368] bg-[#F5EFE6] px-2 py-1 rounded-lg">Dl: {t.deadline.split(' o ')[0]}</span>}
                   {t.done && <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-lg border border-gray-200">Zrobione</span>}
                 </div>
-                
+
                 <h4 className={`text-sm font-bold mb-3 pr-4 transition-colors ${t.done ? 'line-through text-gray-500' : 'text-[#1A2F22] group-hover:text-[#1E5C36]'}`}>{t.title}</h4>
-                
+
                 <div className="flex items-center gap-3">
                   <span className="text-[10px] font-bold text-[#5A7368] flex items-center gap-1 bg-[#F5EFE6] px-2 py-1 rounded-md">
-                    <Clock size={12}/> {t.duration || "Brak info"}
+                    <Clock size={12} /> {t.duration || "Brak info"}
                   </span>
-                  
+
                   <div className="ml-auto flex gap-2">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} 
-                      title="Usuń zadanie" 
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete(t.id); }}
+                      title="Usuń zadanie"
                       className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all opacity-0 group-hover:opacity-100"
                     >
-                      <Trash2 size={14}/>
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -1402,7 +1396,7 @@ function MoodView({ moods, onOpenModal }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const width = 1200; 
+  const width = 1200;
   const height = 400;
   const paddingX = 60; // Zwiększony margines, aby zmieścić minki po lewej
   const innerWidth = width - 2 * paddingX;
@@ -1415,12 +1409,12 @@ function MoodView({ moods, onOpenModal }) {
     const d = new Date(m.d);
     d.setHours(0, 0, 0, 0);
     const diffDays = Math.round((today - d) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays >= 0 && diffDays < daysToShow) {
       const x = paddingX + (1 - diffDays / (daysToShow - 1)) * innerWidth;
       const y = height - 20 - (m.v / 6) * (height - 60); // Podział przez 6 (skala 0-6)
       points.push({ x, y, data: m, diffDays });
-      
+
       // Dodajemy do średniej
       sumV += m.v;
       countV++;
@@ -1428,7 +1422,7 @@ function MoodView({ moods, onOpenModal }) {
   });
 
   points.sort((a, b) => b.diffDays - a.diffDays);
-  
+
   // Obliczanie dynamicznej średniej
   const avgV = countV > 0 ? sumV / countV : 0;
   const avgY = countV > 0 ? height - 20 - (avgV / 6) * (height - 60) : 0;
@@ -1437,12 +1431,12 @@ function MoodView({ moods, onOpenModal }) {
   const firstX = points.length > 0 ? points[0].x : paddingX;
   const lastX = points.length > 0 ? points[points.length - 1].x : width - paddingX;
   const areaPath = points.length > 0 ? `${linePath} L ${lastX},${height} L ${firstX},${height} Z` : "";
-  
+
   const hitRadius = Math.min(25, Math.max(6, (width / daysToShow) / 2));
 
   return (
     <div className="p-10 max-w-7xl mx-auto w-full pb-32 animate-in fade-in duration-500">
-      
+
       {/* ODDZIELONY NAGŁÓWEK OPISOWY */}
       <header className="mb-6">
         <h1 style={H} className="text-4xl font-bold text-[#1A2F22] mb-4">Monitor nastroju</h1>
@@ -1452,7 +1446,7 @@ function MoodView({ moods, onOpenModal }) {
       {/* NOWE BIAŁE MENU (ŚREDNIA I REJESTRACJA) */}
       <div className="flex justify-between items-center bg-white p-3 rounded-2xl border border-[#E8DDD0] shadow-sm mb-8">
         <div className="flex items-center gap-2 pl-2">
-          <button 
+          <button
             onClick={() => setShowAvg(!showAvg)}
             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${showAvg ? "bg-[#1e3a8a] text-white border-[#1e3a8a] shadow-md" : "bg-transparent text-[#5A7368] border-transparent hover:bg-[#F5EFE6]"}`}
           >
@@ -1461,7 +1455,7 @@ function MoodView({ moods, onOpenModal }) {
           {/* Puste miejsce na przyszłe funkcje np. Wzrost/Spadek */}
         </div>
         <button onClick={onOpenModal} className="px-6 py-3 bg-[#1E5C36] text-white rounded-xl font-bold shadow-md hover:bg-[#164a2c] active:scale-95 transition-all flex items-center gap-2">
-          <Smile size={18}/> Zarejestruj swój nastrój
+          <Smile size={18} /> Zarejestruj swój nastrój
         </button>
       </div>
 
@@ -1490,10 +1484,10 @@ function MoodView({ moods, onOpenModal }) {
                 <stop offset="100%" stopColor="#2D9E6B" stopOpacity="0.0" />
               </linearGradient>
             </defs>
-            
+
             {/* OŚ Y - 7 MINEK PO LEWEJ STRONIE ORAZ LINIE SIATKI */}
             {[0, 1, 2, 3, 4, 5, 6].map(level => {
-              const yPos = height - 20 - (level/6)*(height-60);
+              const yPos = height - 20 - (level / 6) * (height - 60);
               return (
                 <g key={`grid-${level}`}>
                   <text x="0" y={yPos + 8} fontSize="26">
@@ -1503,7 +1497,7 @@ function MoodView({ moods, onOpenModal }) {
                 </g>
               );
             })}
-            
+
             {points.length > 0 && (
               <>
                 <path d={areaPath} fill="url(#chartGradient)" />
@@ -1513,13 +1507,13 @@ function MoodView({ moods, onOpenModal }) {
 
             {/* POGRUBIONA, GRANATOWA LINIA ŚREDNIEJ */}
             {showAvg && countV > 0 && (
-               <g className="animate-in fade-in duration-500">
-                 <line x1={paddingX} y1={avgY} x2={width} y2={avgY} stroke="#1e3a8a" strokeWidth="4" strokeDasharray="12,8" strokeLinecap="round" />
-                 <rect x={width - 150} y={avgY - 30} width="150" height="28" rx="8" fill="#1e3a8a" />
-                 <text x={width - 75} y={avgY - 11} fill="white" fontSize="13" fontWeight="bold" textAnchor="middle">
-                    Średnia: {avgV.toFixed(1)} / 6.0
-                 </text>
-               </g>
+              <g className="animate-in fade-in duration-500">
+                <line x1={paddingX} y1={avgY} x2={width} y2={avgY} stroke="#1e3a8a" strokeWidth="4" strokeDasharray="12,8" strokeLinecap="round" />
+                <rect x={width - 150} y={avgY - 30} width="150" height="28" rx="8" fill="#1e3a8a" />
+                <text x={width - 75} y={avgY - 11} fill="white" fontSize="13" fontWeight="bold" textAnchor="middle">
+                  Średnia: {avgV.toFixed(1)} / 6.0
+                </text>
+              </g>
             )}
 
             {/* INTERAKTYWNE PUNKTY */}
@@ -1534,8 +1528,8 @@ function MoodView({ moods, onOpenModal }) {
 
           {/* DYMEK INFORMACYJNY */}
           {hovered && (
-            <div className="absolute z-50 bg-white border border-[#2D9E6B]/30 shadow-2xl rounded-2xl p-4 w-72 pointer-events-none transform -translate-x-1/2 -translate-y-[115%]" 
-                 style={{ left: `${(points.find(p => p.data.id === hovered.id)?.x / width) * 100}%`, top: `${(points.find(p => p.data.id === hovered.id)?.y / height) * 100}%` }}>
+            <div className="absolute z-50 bg-white border border-[#2D9E6B]/30 shadow-2xl rounded-2xl p-4 w-72 pointer-events-none transform -translate-x-1/2 -translate-y-[115%]"
+              style={{ left: `${(points.find(p => p.data.id === hovered.id)?.x / width) * 100}%`, top: `${(points.find(p => p.data.id === hovered.id)?.y / height) * 100}%` }}>
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-3xl">{EMOJIS[hovered.v]}</span>
@@ -1552,10 +1546,10 @@ function MoodView({ moods, onOpenModal }) {
   );
 }
 
-function WarningView({loading, user}) {
-  const H={fontFamily:"'Lora',serif"};
-  if(loading) return <SkeletonScreen/>;
-  
+function WarningView({ loading, user }) {
+  const H = { fontFamily: "'Lora',serif" };
+  if (loading) return <SkeletonScreen />;
+
   return (
     <div className="p-10 max-w-6xl mx-auto w-full pb-32">
       {/* NAGŁÓWEK PERSONALIZOWANY */}
@@ -1570,7 +1564,7 @@ function WarningView({loading, user}) {
       {/* ŻÓŁTY BANER INFORMACYJNY */}
       <div className="bg-amber-50 border border-amber-100 p-6 rounded-2xl flex gap-4 items-start mb-12 shadow-sm">
         <div className="bg-white p-2 rounded-xl shadow-sm">
-          <Settings size={20} className="text-amber-500 animate-pulse"/>
+          <Settings size={20} className="text-amber-500 animate-pulse" />
         </div>
         <p className="text-[11px] font-medium text-amber-800 leading-relaxed">
           <span className="font-black uppercase tracking-wider block mb-1">Ważna informacja</span>
@@ -1584,30 +1578,30 @@ function WarningView({loading, user}) {
           <div key={i} className="bg-white border border-[#E8DDD0] rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group">
             <p className="text-[10px] font-black uppercase text-[#9FB5AD] tracking-[0.15em] mb-1">{c.org}</p>
             <h3 style={H} className="text-xl font-bold text-[#1A2F22] mb-4 group-hover:text-[#2D9E6B] transition-colors">{c.name}</h3>
-            
+
             <p className="text-xs text-[#5A7368] leading-[1.7] mb-8 min-h-[4rem]">
               {c.desc}
             </p>
 
             <div className="flex items-center justify-between pt-6 border-t border-[#F5EFE6]">
               <div className="flex items-center gap-2">
-                <Phone size={14} className="text-[#2D9E6B]"/>
+                <Phone size={14} className="text-[#2D9E6B]" />
                 <span className="text-sm font-black text-[#1A2F22]">{c.phone}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Clock size={14} className="text-[#9FB5AD]"/>
+                <Clock size={14} className="text-[#9FB5AD]" />
                 <span className="text-[11px] font-bold text-[#5A7368]">{c.hours}</span>
               </div>
               {/* Link do strony jako działający odnośnik */}
-<a 
-  href={c.url} 
-  target="_blank" 
-  rel="noopener noreferrer" 
-  className="flex items-center gap-2 text-[#9FB5AD] hover:text-[#2D9E6B] transition-colors"
->
-  <ExternalLink size={14}/>
-  <span className="text-[11px] font-bold">{c.url.replace("https://", "")}</span>
-</a>
+              <a
+                href={c.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-[#9FB5AD] hover:text-[#2D9E6B] transition-colors"
+              >
+                <ExternalLink size={14} />
+                <span className="text-[11px] font-bold">{c.url.replace("https://", "")}</span>
+              </a>
             </div>
           </div>
         ))}
@@ -1623,26 +1617,27 @@ export default function App() {
   const [view, setView] = useState("landing");
   const [authMode, setAuthMode] = useState("login");
   const [user, setUser] = usePersist("wba_user", null);
-  
+
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [focusedTask, setFocusedTask] = useState(null);
-  
+
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const [tasks, setTasks] = usePersist("wba_tasks", INIT_TASKS);
   const [moods, setMoods] = usePersist("wba_moods", INIT_MOODS);
-  const {ts, add, rm} = useToasts();
+  const { ts, add, rm } = useToasts();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [hasPromptedToday, setHasPromptedToday] = useState(false);
   const [hasPrompted5h, setHasPrompted5h] = useState(false);
 
   useEffect(() => {
-    if(view === "landing" && user) setView("app");
+    if (view === "landing" && user) setView("app");
   }, [user, view]);
 
   useEffect(() => {
@@ -1670,35 +1665,35 @@ export default function App() {
     }
   }, [tasks, moods, hasPromptedToday, hasPrompted5h]);
 
- const handleNav = (tab) => {
+  const handleNav = (tab) => {
     // Usunęliśmy stąd blokadę, która otwierała Modal zamiast widoku
     setIsLoading(true);
     setActiveTab(tab);
     setTimeout(() => setIsLoading(false), 800);
   };
 
- const sortSmartQueue = (tasksList) => {
+  const sortSmartQueue = (tasksList) => {
     const todayStr = new Date().toISOString().split("T")[0];
-    const lastMood = moods.length > 0 ? moods[moods.length - 1].v : 2; 
+    const lastMood = moods.length > 0 ? moods[moods.length - 1].v : 2;
 
     const getScore = (task) => {
       // USUNIĘTO: Zrzucanie zrobionych zadań na dno. Teraz wynik zawsze jest taki sam!
       let score = 0;
-      
+
       if (task.p === "wysoki") score += 30;
       if (task.p === "sredni") score += 20;
       if (task.p === "niski") score += 10;
-      
+
       if (task.deadline && task.deadline.startsWith(todayStr)) score += 100;
-      
+
       const match = task.duration ? task.duration.match(/(\d+)/) : null;
       const mins = match ? parseInt(match[1]) : 60;
       if (mins <= 30) score += 5;
 
       if (lastMood <= 1) {
-        score -= (task.difficulty || 0) * 15; 
+        score -= (task.difficulty || 0) * 15;
       } else {
-        score += (task.difficulty || 0) * 6; 
+        score += (task.difficulty || 0) * 6;
       }
       return score;
     };
@@ -1712,8 +1707,8 @@ export default function App() {
 
   // --- NOWA LOGIKA: RĘCZNE GENEROWANIE PLANU ---
   const generatePlan = () => {
-    const timelineStart = 6; 
-    const dayLimitMins = 21 * 60; 
+    const timelineStart = 6;
+    const dayLimitMins = 21 * 60;
     let currentPointer = timelineStart * 60;
 
     // 1. Wyodrębniamy sztywne bloki (tylko na dzisiaj)
@@ -1742,16 +1737,16 @@ export default function App() {
     const flexTasks = updatedTasks
       .filter(t => !t.sMins && !t.done)
       .sort((a, b) => {
-         if (a.p === "wysoki" && b.p !== "wysoki") return -1;
-         if (a.p !== "wysoki" && b.p === "wysoki") return 1;
-         return 0;
+        if (a.p === "wysoki" && b.p !== "wysoki") return -1;
+        if (a.p !== "wysoki" && b.p === "wysoki") return 1;
+        return 0;
       });
 
-   flexTasks.forEach(t => {
+    flexTasks.forEach(t => {
       const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
       const duration = durMatch ? parseInt(durMatch[1]) : 45;
       const visualDuration = Math.max(duration, 45);
-      
+
       // --- DYNAMICZNY BUFOR (Zasada 52/17) ---
       let breakTime = 0;
       if (duration >= 50) {
@@ -1764,11 +1759,11 @@ export default function App() {
 
       let fits = false;
       while (!fits) {
-        const collision = lockedBlocks.find(b => 
+        const collision = lockedBlocks.find(b =>
           (currentPointer < b.eMins && (currentPointer + visualDuration) > b.sMins)
         );
         if (collision) {
-          currentPointer = collision.eMins + breakTime; 
+          currentPointer = collision.eMins + breakTime;
         } else {
           fits = true;
         }
@@ -1788,26 +1783,26 @@ export default function App() {
 
   const toggleTask = (id) => {
     setTasks(prevTasks => {
-      let updated = prevTasks.map(t => t.id === id ? {...t, done: !t.done} : t);
+      let updated = prevTasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
       // USUNIĘTO: Generowanie sztucznych przerw po wykonaniu trudnego zadania
       return sortSmartQueue(updated);
     });
   };
-  
+
   const saveTask = (t) => {
     setTasks(prev => {
       let updatedTasks = [];
       if (t.id) {
-        updatedTasks = prev.map(task => task.id === t.id ? {...task, ...t} : task);
+        updatedTasks = prev.map(task => task.id === t.id ? { ...task, ...t } : task);
       } else {
-        updatedTasks = [{...t, id: Date.now(), done: false}, ...prev];
+        updatedTasks = [{ ...t, id: Date.now(), done: false }, ...prev];
       }
       return sortSmartQueue(updatedTasks);
     });
 
     if (t.id) add("Zmiany zostały zapisane.");
     else add("Zadanie dodane pomyślnie!");
-    
+
     setIsTaskModalOpen(false);
     setEditingTask(null);
   };
@@ -1826,10 +1821,10 @@ export default function App() {
     setMoods(prev => {
       // Pobieramy dzisiejszą datę w formacie YYYY-MM-DD
       const todayStr = new Date().toISOString().split("T")[0];
-      
+
       // Szukamy, czy dzisiaj już wprowadzono nastrój
       const existingIndex = prev.findIndex(mood => mood.d === todayStr);
-      
+
       if (existingIndex >= 0) {
         // Jeśli tak -> aktualizujemy istniejącą kropkę (zmieniamy wartość i notatkę)
         const newMoods = [...prev];
@@ -1843,80 +1838,158 @@ export default function App() {
     add("Twój nastrój został zapisany.");
   };
 
-  if (view === "landing") return <><Font /><Landing onCTA={(mode) => {setAuthMode(mode); setView("auth");}}/></>;
-  if (view === "auth") return <><Font /><AuthView mode={authMode} onSwitch={setAuthMode} onBack={() => setView("landing")} onAuth={(u) => {setUser(u); setView("onboarding");}} /></>;
-  if (view === "onboarding") return <><Font /><Onboarding onComplete={(prefs) => { setUser({...user, prefs}); setView("app"); }} /></>;
+  if (view === "landing") return <><Font /><Landing onCTA={(mode) => { setAuthMode(mode); setView("auth"); }} /></>;
+  if (view === "auth") return <><Font /><AuthView mode={authMode} onSwitch={setAuthMode} onBack={() => setView("landing")} onAuth={(u) => { setUser(u); setView("onboarding"); }} /></>;
+  if (view === "onboarding") return <><Font /><Onboarding onComplete={(prefs) => { setUser({ ...user, prefs }); setView("app"); }} /></>;
 
   return (
     <div className="flex h-screen bg-[#F5EFE6] font-sans selection:bg-[#2D9E6B] selection:text-white overflow-hidden">
       <Font />
       <Toasts ts={ts} rm={rm} />
-      
+
       {focusedTask ? (
-        <FocusModeView 
-          task={focusedTask} 
-          onClose={() => setFocusedTask(null)} 
+        <FocusModeView
+          task={focusedTask}
+          onClose={() => setFocusedTask(null)}
           onComplete={(id) => { toggleTask(id); setFocusedTask(null); add("Świetna robota! Zadanie ukończone."); }}
         />
       ) : (
         <>
-          <Sidebar 
-            active={activeTab} 
+          <Sidebar
+            active={activeTab}
             onNav={handleNav}
             user={user}
-            onLogout={() => {setUser(null); setView("landing");}}
+            onLogout={() => { setUser(null); setView("landing"); }}
             collapsed={isSidebarCollapsed}
             setCollapsed={setSidebarCollapsed}
-            selectedDate={selectedDate} 
-            setSelectedDate={setSelectedDate} 
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
           />
           <main className="flex-1 overflow-y-auto relative bg-[#FAFAFA]">
-            {/* ZMIANA TUTAJ: W-full zamiast max-w-4xl aby zmieścić 3 kolumny */}
+
+            {/* NOWY HEADER ZE STREAKIEM (1 do 1 z HTML) */}
+            <header className="w-full px-8 py-6 flex items-center justify-between border-b border-[#E8DDD0] bg-white sticky top-0 z-[60]">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-3xl text-[#164229] tracking-tight" style={{ fontFamily: "'Lora', serif", fontWeight: 700 }}>Wellbeing app</h1>
+                <div className="h-6 w-[1px] bg-gray-300"></div>
+                <span className="text-3xl font-bold text-[#164229]">Cześć {user?.name || "Natalia"}!</span>
+              </div>
+
+              <div className="flex items-center bg-[#F3F4F6] rounded-full px-8 py-2.5 space-x-6">
+                {/* Tracker Dni */}
+                <div className="flex items-center space-x-3">
+                  {[
+                    { d: 'Pon', checked: true },
+                    { d: 'Wt', checked: true },
+                    { d: 'Śr', checked: true },
+                    { d: 'Czw', checked: true },
+                    { d: 'Pt', checked: false },
+                    { d: 'Sb', checked: false },
+                    { d: 'Ndz', checked: false },
+                  ].map((day, idx) => (
+                    <div key={idx} className="flex flex-col items-center">
+                      {day.checked ? (
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#50C878] text-white">
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-full border-[1.5px] border-dashed border-[#D1D5DB]"></div>
+                      )}
+                      <span className="text-[10px] text-[#6B7280] mt-1 text-center">{day.d}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Licznik Dni */}
+                <div className="flex items-center space-x-2">
+                  <svg className="h-7 w-7 text-[#4CAF50]" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.644 1.59a.75.75 0 01.656-.033c.483.218 1.488.948 2.126 1.951.52.818.895 1.758 1.053 2.711a.75.75 0 01-.397.77l-.612.306a.75.75 0 00-.416.711c.063.486.264 1.048.706 1.538.452.5.992.793 1.442.923.367.106.744.156 1.137.156a.75.75 0 01.716.974c-.452 1.462-1.393 2.906-2.585 3.99-1.353 1.23-3.14 1.93-4.887 1.93a.75.75 0 01-.75-.75c0-1.312-.472-2.58-1.425-3.532C7.753 11.395 6.485 10.923 5.173 10.923a.75.75 0 01-.75-.75c0-1.747.7-3.534 1.93-4.887 1.084-1.192 2.528-2.133 3.99-2.585a.75.75 0 01.974.716c0 .393.05.77.156 1.137.13.45.423.99.923 1.442.49.442 1.052.643 1.538.706a.75.75 0 00.711-.416l.306-.612a.75.75 0 01.77-.397c.953.158 1.893.533 2.711 1.053 1.003.638 1.733 1.643 1.951 2.126a.75.75 0 01-.033.656z" />
+                  </svg>
+                  <span className="text-2xl font-bold text-gray-800">12</span>
+                </div>
+
+                {/* Profil z działającym menu */}
+                <div className="relative flex items-center border-l border-gray-200 pl-4">
+                  <button onClick={() => setProfileMenuOpen(!profileMenuOpen)} className="flex items-center space-x-3 focus:outline-none">
+                    <svg className="w-10 h-10 rounded-full bg-gray-200" fill="none" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="20" cy="20" fill="#E5E7EB" r="20" />
+                      <path d="M20 20C22.2091 20 24 18.2091 24 16C24 13.7909 22.2091 12 20 12C17.7909 12 16 13.7909 16 16C16 18.2091 17.7909 20 20 20Z" fill="#9CA3AF" />
+                      <path d="M20 22C15.5817 22 12 25.5817 12 30H28C28 25.5817 24.4183 22 20 22Z" fill="#9CA3AF" />
+                    </svg>
+                    <div className="flex flex-col leading-tight text-left">
+                      <span className="text-sm font-medium text-gray-800">{user?.name || "Natalia"}</span>
+                      <span className="text-sm font-medium text-gray-800">Kowalska</span>
+                    </div>
+                    <svg className="h-5 w-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Menu wylogowania powiązane z kliknięciem w profil */}
+                  {profileMenuOpen && (
+                    <div className="absolute top-full mt-2 right-0 w-48 bg-white rounded-2xl shadow-xl border border-[#E8DDD0] py-2 z-[100] animate-in fade-in slide-in-from-top-2">
+                      <button
+                        onClick={() => {
+                          localStorage.clear();
+                          window.location.reload();
+                        }}
+                        className="w-full px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 transition-all rounded-xl"
+                      >
+                        <LogOut size={16} /> Wyloguj mnie
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </header>
+
             <div className="w-full">
-           {activeTab === "dashboard" && (
-                <DashboardView 
-                 tasks={tasks}
-                 moods={moods} 
-                 onToggle={toggleTask} 
-                 onOpenTaskModal={() => { setEditingTask(null); setIsTaskModalOpen(true); }} 
-                 onEditTask={handleEditTask}
-                 onDelete={deleteTask}
-                 onFocusTask={setFocusedTask}
-                 onAlert={() => {
+              {activeTab === "dashboard" && (
+                <DashboardView
+                  tasks={tasks}
+                  moods={moods}
+                  onToggle={toggleTask}
+                  onOpenTaskModal={() => { setEditingTask(null); setIsTaskModalOpen(true); }}
+                  onEditTask={handleEditTask}
+                  onDelete={deleteTask}
+                  onFocusTask={setFocusedTask}
+                  onAlert={() => {
                     add("Wykryto sygnał ostrzegawczy. Przejdź do Systemu Ostrzegania.", "warn");
                     handleNav("warning");
-                 }}
-                 loading={isLoading}
-                 onGeneratePlan={generatePlan} /* <-- TO OŻYWIA GUZIK! */
+                  }}
+                  loading={isLoading}
+                  onGeneratePlan={generatePlan} /* <-- TO OŻYWIA GUZIK! */
                 />
               )}
               {activeTab === "calendar" && (
-                <CalendarView 
-                  tasks={tasks} 
-                  selectedDate={selectedDate} 
-                  onToggle={toggleTask} 
+                <CalendarView
+                  tasks={tasks}
+                  selectedDate={selectedDate}
+                  onToggle={toggleTask}
                   onDelete={deleteTask}
                   onFocusTask={setFocusedTask}
                   onEditTask={handleEditTask}
-                  loading={isLoading} 
+                  loading={isLoading}
                 />
               )}
 
               {activeTab === "mood" && (
-                <MoodView 
-                  moods={moods} 
-                  onOpenModal={() => setShowMoodModal(true)} 
+                <MoodView
+                  moods={moods}
+                  onOpenModal={() => setShowMoodModal(true)}
                 />
               )}
               {activeTab === "warning" && <WarningView loading={isLoading} user={user} />}
             </div>
           </main>
-          
+
           {isTaskModalOpen && (
-            <TaskModal 
-              onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); }} 
-              onSave={saveTask} 
-              taskToEdit={editingTask} 
+            <TaskModal
+              onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); }}
+              onSave={saveTask}
+              taskToEdit={editingTask}
             />
           )}
 
