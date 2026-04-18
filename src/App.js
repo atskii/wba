@@ -172,7 +172,7 @@ const INIT_TASKS = [
   { id: 12, title: "Testowanie modułu logowania 🧪", w: 8, p: "wysoki", done: false, duration: "45 min", deadline: `${day2YMD} o 10:00`, difficulty: 4, desc: "Sprawdzenie błędów walidacji.", isLocked: false, t: "" },
 
   // --- DZIEŃ 3 ---
-  { id: 13, title: "Briefing poranny ☕", w: 4, p: "sredni", done: false, duration: "15 min", deadline: "", difficulty: 2, desc: "Szybkie statusy.", isLocked: true, t: `🔒 09:00 (${day3PL})` },
+  { id: 13, title: "Briefing poranny ☕", w: 4, p: "sredni", done: false, duration: "15 min", deadline: "", difficulty: 2, desc: "Szybkie statusy.", isLocked: true, t: `🔒 07:00 (${day3PL})` },
   { id: 14, title: "Nauka nowego frameworka 📚", w: 7, p: "sredni", done: false, duration: "120 min", deadline: "", difficulty: 4, desc: "Kurs na Udemy.", isLocked: false, t: "" },
   { id: 15, title: "Czytanie książki 📖", w: 2, p: "niski", done: false, duration: "45 min", deadline: "", difficulty: 1, desc: "Dobrostan psychiczny.", isLocked: false, t: "" },
   { id: 16, title: "Webinar o AI 🤖", w: 5, p: "niski", done: false, duration: "60 min", deadline: `${day3YMD} o 15:00`, difficulty: 3, desc: "Nowości w GPT-5.", isLocked: false, t: "" },
@@ -200,7 +200,7 @@ const INIT_TASKS = [
   { id: 32, title: "Aktualizacja CV 📄", w: 5, p: "sredni", done: false, duration: "90 min", deadline: `${day4YMD} o 23:59`, difficulty: 3, desc: "Dopisać nowy projekt i zaktualizować technologie.", isLocked: false, t: "" },
   { id: 33, title: "Telefon do babci 👵", w: 8, p: "wysoki", done: true, duration: "20 min", deadline: "", difficulty: 1, desc: "Zapytać o zdrowie i opowiedzieć o nowej pracy.", isLocked: false, t: "" },
   { id: 34, title: "Odpisywanie na zaległe maile 📩", w: 4, p: "niski", done: false, duration: "30 min", deadline: "", difficulty: 2, desc: "Cel: Skrzynka odbiorcza (Inbox) Zero.", isLocked: false, t: "" },
-  { id: 35, title: "Głęboka praca nad kodem 👨‍💻", w: 10, p: "wysoki", done: false, duration: "180 min", deadline: "", difficulty: 5, desc: "Implementacja nowego algorytmu. Tylko muzyka lo-fi, brak rozpraszaczy.", isLocked: true, t: `🔒 07:00 (${day3PL})` },
+  { id: 35, title: "Głęboka praca nad kodem 👨‍💻", w: 10, p: "wysoki", done: false, duration: "180 min", deadline: "", difficulty: 5, desc: "Implementacja nowego algorytmu. Tylko muzyka lo-fi, brak rozpraszaczy.", isLocked: true, t: `🔒 10:30 (${day3PL})` },
   { id: 36, title: "Rozpisanie diety 🥗", w: 3, p: "sredni", done: false, duration: "40 min", deadline: "", difficulty: 2, desc: "Lista posiłków na najbliższe dni i zrobienie listy zakupów.", isLocked: false, t: "" },
   { id: 37, title: "Posprzątanie pulpitu 💻", w: 1, p: "niski", done: false, duration: "10 min", deadline: "", difficulty: 1, desc: "Usunięcie starych screenów do kosza.", isLocked: false, t: "" },
   { id: 38, title: "Wymiana żarówek w przedpokoju 💡", w: 2, p: "niski", done: false, duration: "15 min", deadline: "", difficulty: 1, desc: "Kupić ciepłe światło w markecie budowlanym.", isLocked: false, t: "" },
@@ -215,7 +215,7 @@ const INIT_TASKS = [
   { id: 47, title: "Szybki power nap 😴", w: 1, p: "niski", done: true, duration: "20 min", deadline: "", difficulty: 1, desc: "Regeneracja mózgu w środku ciężkiego dnia.", isLocked: false, t: "" },
   { id: 48, title: "Przejrzenie rachunków 🧾", w: 4, p: "sredni", done: false, duration: "25 min", deadline: `${day2YMD} o 10:00`, difficulty: 3, desc: "Wpisać wszystkie kwoty do domowego budżetu w Excelu.", isLocked: false, t: "" },
   { id: 49, title: "Składanie mebli z IKEA 🪑", w: 5, p: "sredni", done: false, duration: "120 min", deadline: "", difficulty: 4, desc: "Nowa komoda do sypialni. Oby nie zabrakło śrubek.", isLocked: false, t: "" },
-  { id: 50, title: "Wdrożenie zmian na produkcję ⚠️", w: 9, p: "wysoki", done: false, duration: "45 min", deadline: "", difficulty: 5, desc: "Bardzo krytyczny proces, wymaga podwójnego sprawdzenia wszystkiego.", isLocked: true, t: `🔒 02:00 (${day5PL})` }
+  { id: 50, title: "Wdrożenie zmian na produkcję ⚠️", w: 9, p: "wysoki", done: false, duration: "45 min", deadline: "", difficulty: 5, desc: "Bardzo krytyczny proces, wymaga podwójnego sprawdzenia wszystkiego.", isLocked: true, t: `🔒 06:00 (${day5PL})` }
 ];
 
 
@@ -1758,28 +1758,40 @@ export default function App() {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
       if (view !== 'app') return;
 
-      // Shift+T → Dodaj 20 losowych zadań z puli INIT_TASKS
+      // Shift+T → Dodaj 20 losowych zadań z puli INIT_TASKS (bez duplikatów)
       if (e.shiftKey && e.key === 'T') {
         e.preventDefault();
-        const shuffled = [...INIT_TASKS].sort(() => Math.random() - 0.5);
-        const picked = shuffled.slice(0, 20);
+
+        // Oblicz dostępne zadania PRZED setTasks, żeby mieć licznik
+        let totalCount = 0;
 
         setTasks(prev => {
-          let updated = [...prev];
-          picked.forEach(newTask => {
-            const isCyclic = newTask.t && newTask.t.includes('🔁');
-            const existingIndex = updated.findIndex(t => t.title === newTask.title);
-            if (existingIndex >= 0) {
-              if (isCyclic) {
-                updated[existingIndex] = { ...newTask, id: updated[existingIndex].id, done: updated[existingIndex].done };
-              }
-            } else {
-              updated.push({ ...newTask, id: Date.now() + Math.random(), done: newTask.done, sMins: null, eMins: null, pDate: null });
-            }
-          });
-          return updated;
+          const existingTitles = new Set(prev.map(t => t.title));
+          const available = INIT_TASKS.filter(t => !existingTitles.has(t.title));
+
+          if (available.length === 0) {
+            totalCount = prev.length;
+            return prev;
+          }
+
+          const shuffled = [...available].sort(() => Math.random() - 0.5);
+          const picked = shuffled.slice(0, Math.min(20, available.length));
+          totalCount = prev.length + picked.length;
+
+          const newTasks = picked.map(t => ({
+            ...t,
+            id: Date.now() + Math.random(),
+            done: t.done,
+            sMins: null,
+            eMins: null,
+            pDate: null
+          }));
+
+          return [...prev, ...newTasks];
         });
-        add(`Dodano losowe zadania z puli testowej (Shift+T)`);
+
+        // Użyj setTimeout żeby totalCount zdążył się ustawić w callbacku
+        setTimeout(() => add(`Zadania w obiegu: ${totalCount}/${INIT_TASKS.length} (Shift+T)`), 0);
       }
 
       // Shift+Y → Wyczyść WSZYSTKIE zadania
@@ -1865,77 +1877,78 @@ export default function App() {
   const generatePlan = () => {
     const timelineStart = 6;
     const dayLimitMins = 21 * 60;
-    let currentPointer = timelineStart * 60;
     const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
-    // 1. Wyodrębniamy sztywne bloki (dla selectedDate)
-    const lockedBlocks = tasks
-      .filter(t => t.isLocked && t.t && checkIsDate(t.t, selectedDate))
-      .map(t => {
-        const match = t.t.match(/(\d{1,2}):(\d{2})/);
-        const startMins = match ? parseInt(match[1]) * 60 + parseInt(match[2]) : 0;
-        const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
-        const duration = durMatch ? parseInt(durMatch[1]) : 60;
-        return { ...t, sMins: startMins, eMins: startMins + duration };
-      })
-      .sort((a, b) => a.sMins - b.sMins);
+    setTasks(prevTasks => {
+      let currentPointer = timelineStart * 60;
 
-    // 2. Szeregiem ustawiamy resztę zadań (flex) - resetujemy TYLKO dla bieżącego dnia lub z backlogu
-    const updatedTasks = tasks.map(t => {
-      if (!t.isLocked && (t.pDate === dateStr || !t.pDate)) {
-        return { ...t, sMins: null, eMins: null };
-      }
-      return t;
-    });
+      // 1. Wyodrębniamy sztywne bloki (dla selectedDate)
+      const lockedBlocks = prevTasks
+        .filter(t => t.isLocked && t.t && checkIsDate(t.t, selectedDate))
+        .map(t => {
+          const match = t.t.match(/(\d{1,2}):(\d{2})/);
+          const startMins = match ? parseInt(match[1]) * 60 + parseInt(match[2]) : 0;
+          const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
+          const duration = durMatch ? parseInt(durMatch[1]) : 60;
+          return { ...t, sMins: startMins, eMins: startMins + duration };
+        })
+        .sort((a, b) => a.sMins - b.sMins);
 
-    // Teraz wypełniamy luki zadaniami z kolejki (flex)
-    const flexTasks = updatedTasks
-      .filter(t => (t.pDate === dateStr || (!t.pDate && !t.isLocked)) && !t.sMins && !t.done)
-      .sort((a, b) => {
-        if (a.p === "wysoki" && b.p !== "wysoki") return -1;
-        if (a.p !== "wysoki" && b.p === "wysoki") return 1;
-        return 0;
+      // 2. Resetujemy zadania flex dla bieżącego dnia lub z backlogu
+      const updatedTasks = prevTasks.map(t => {
+        if (!t.isLocked && (t.pDate === dateStr || !t.pDate)) {
+          return { ...t, sMins: null, eMins: null };
+        }
+        return t;
       });
 
-    flexTasks.forEach(t => {
-      const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
-      const duration = durMatch ? parseInt(durMatch[1]) : 45;
-      const visualDuration = Math.max(duration, 45);
+      // 3. Wypełniamy luki zadaniami z kolejki (flex)
+      const flexTasks = updatedTasks
+        .filter(t => (t.pDate === dateStr || (!t.pDate && !t.isLocked)) && !t.sMins)
+        .sort((a, b) => {
+          if (a.p === "wysoki" && b.p !== "wysoki") return -1;
+          if (a.p !== "wysoki" && b.p === "wysoki") return 1;
+          return 0;
+        });
 
-      // --- DYNAMICZNY BUFOR (Zasada 52/17) ---
-      let breakTime = 0;
-      if (duration >= 50) {
-        breakTime = 17;
-      } else if (duration >= 25) {
-        breakTime = Math.round((duration / 52) * 17);
-      } else {
-        breakTime = 3;
-      }
+      flexTasks.forEach(t => {
+        const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
+        const duration = durMatch ? parseInt(durMatch[1]) : 45;
+        const visualDuration = Math.max(duration, 45);
 
-      let fits = false;
-      while (!fits) {
-        const collision = lockedBlocks.find(b =>
-          (currentPointer < b.eMins && (currentPointer + visualDuration) > b.sMins)
-        );
-        if (collision) {
-          currentPointer = collision.eMins + breakTime;
+        // --- DYNAMICZNY BUFOR (Zasada 52/17) ---
+        let breakTime = 0;
+        if (duration >= 50) {
+          breakTime = 17;
+        } else if (duration >= 25) {
+          breakTime = Math.round((duration / 52) * 17);
         } else {
-          fits = true;
+          breakTime = 3;
         }
-      }
 
-      if (currentPointer + visualDuration <= dayLimitMins) {
-        const idx = updatedTasks.findIndex(ut => ut.id === t.id);
-        if (idx !== -1) {
-          updatedTasks[idx].sMins = currentPointer;
-          updatedTasks[idx].eMins = currentPointer + duration;
-          updatedTasks[idx].pDate = dateStr;
+        let fits = false;
+        while (!fits) {
+          const collision = lockedBlocks.find(b =>
+            (currentPointer < b.eMins && (currentPointer + visualDuration) > b.sMins)
+          );
+          if (collision) {
+            currentPointer = collision.eMins + breakTime;
+          } else {
+            fits = true;
+          }
         }
-        currentPointer += (visualDuration + breakTime);
-      }
+
+        if (currentPointer + visualDuration <= dayLimitMins) {
+          const idx = updatedTasks.findIndex(ut => ut.id === t.id);
+          if (idx !== -1) {
+            updatedTasks[idx] = { ...updatedTasks[idx], sMins: currentPointer, eMins: currentPointer + duration, pDate: dateStr };
+          }
+          currentPointer += (visualDuration + breakTime);
+        }
+      });
+
+      return updatedTasks;
     });
-
-    setTasks(updatedTasks);
     add(`Plan dnia (${selectedDate.toLocaleDateString('pl-PL')}) został wygenerowany! ✨`);
   };
 
