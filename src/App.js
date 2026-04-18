@@ -128,24 +128,26 @@ const INIT_MOODS = generateHistoricalMoods();
 const DAYS = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sb", "Ndz"];
 
 // --- ROZSZERZONE DYNAMICZNE DATY ---
+const getLocalYMD = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 const now = new Date();
-const todayYMD = now.toISOString().split("T")[0];
+const todayYMD = getLocalYMD(now);
 const todayPL = now.toLocaleDateString("pl-PL");
 
 const day2 = new Date(now); day2.setDate(now.getDate() + 1);
-const day2YMD = day2.toISOString().split("T")[0];
+const day2YMD = getLocalYMD(day2);
 const day2PL = day2.toLocaleDateString("pl-PL");
 
 const day3 = new Date(now); day3.setDate(now.getDate() + 2);
-const day3YMD = day3.toISOString().split("T")[0];
+const day3YMD = getLocalYMD(day3);
 const day3PL = day3.toLocaleDateString("pl-PL");
 
 const day4 = new Date(now); day4.setDate(now.getDate() + 3);
-const day4YMD = day4.toISOString().split("T")[0];
+const day4YMD = getLocalYMD(day4);
 const day4PL = day4.toLocaleDateString("pl-PL");
 
 const day5 = new Date(now); day5.setDate(now.getDate() + 4);
-const day5YMD = day5.toISOString().split("T")[0];
+const day5YMD = getLocalYMD(day5);
 const day5PL = day5.toLocaleDateString("pl-PL");
 
 // Pomocnicze godziny
@@ -923,7 +925,7 @@ function MoodModal({ onClose, onAdd, defaultNote = "", forced = false }) {
   const [sel, setSel] = useState(3); // <--- Zmiana domyślnego indeksu na 3
   const [note, setNote] = useState(defaultNote);
   const today = new Date();
-  const dateStr = today.toISOString().split("T")[0];
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const timeStr = today.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
@@ -1036,22 +1038,22 @@ function StreakPlant({ tasks }) {
 // ═══════════════════════════════════════════════════
 //  DASHBOARD VIEW (ZAMROŻONY PLAN Z GUZIKIEM GENERUJ)
 // ═══════════════════════════════════════════════════
-function DashboardView({ tasks, moods, selectedDate, onToggle, onOpenTaskModal, onEditTask, onDelete, onReturnToBacklog, onAlert, onFocusTask, loading, onGeneratePlan }) {
+function DashboardView({ tasks, moods, selectedDate, onChangeDate, onToggle, onOpenTaskModal, onEditTask, onDelete, onReturnToBacklog, onAlert, onFocusTask, loading, onGeneratePlan }) {
   const H = { fontFamily: "'Lora', serif" };
   const [showBacklog, setShowBacklog] = useState(false);
 
   if (loading) return <SkeletonScreen />;
 
   const timelineStart = 6;
-  const dateStr = selectedDate.toISOString().split("T")[0];
+  const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   const flexScheduled = tasks.filter(t => !t.isLocked && t.sMins !== null && t.sMins !== undefined && t.pDate === dateStr);
   const lockedScheduled = tasks.filter(t => t.isLocked && t.t && checkIsDate(t.t, selectedDate)).map(t => {
-      const match = t.t.match(/(\d{1,2}):(\d{2})/);
-      const startMins = match ? parseInt(match[1]) * 60 + parseInt(match[2]) : 0;
-      const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
-      const duration = durMatch ? parseInt(durMatch[1]) : 60;
-      return { ...t, sMins: startMins, eMins: startMins + duration };
+    const match = t.t.match(/(\d{1,2}):(\d{2})/);
+    const startMins = match ? parseInt(match[1]) * 60 + parseInt(match[2]) : 0;
+    const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
+    const duration = durMatch ? parseInt(durMatch[1]) : 60;
+    return { ...t, sMins: startMins, eMins: startMins + duration };
   });
 
   const scheduled = [...flexScheduled, ...lockedScheduled].sort((a, b) => a.sMins - b.sMins);
@@ -1084,14 +1086,29 @@ function DashboardView({ tasks, moods, selectedDate, onToggle, onOpenTaskModal, 
     <div className="p-8 max-w-6xl mx-auto w-full pb-32">
       <div className="flex items-center justify-between mb-12">
         <h1 style={H} className="text-4xl font-bold text-[#1A2F22] tracking-tight">Dzisiejsze zadania</h1>
-        <div className="flex gap-3">
-          {/* NOWY GUZIK GENEROWANIA */}
-          <button onClick={onGeneratePlan} className="flex items-center gap-2 px-5 py-2.5 bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]/30 rounded-xl text-sm font-bold hover:bg-[#2D9E6B] hover:text-white transition-all shadow-sm active:scale-95">
-            <RefreshCw size={18} /> Generuj plan
-          </button>
-          <button onClick={onOpenTaskModal} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8DDD0] text-[#1A2F22] rounded-xl text-sm font-bold hover:bg-[#F5EFE6] hover:border-[#2D9E6B] transition-all shadow-sm active:scale-95">
-            Dodaj zadanie <Plus size={18} />
-          </button>
+
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 bg-[#F5EFE6] px-3 py-1.5 rounded-2xl border border-[#E8DDD0]">
+            <button onClick={() => onChangeDate(-1)} className="p-1.5 hover:bg-white rounded-xl transition-all shadow-sm active:scale-95 text-[#5A7368] hover:text-[#1E5C36]">
+              <ChevronLeft size={18} />
+            </button>
+            <span className="text-sm font-bold text-[#1E5C36] capitalize min-w-[130px] text-center" style={{ fontFamily: "'Lora', serif" }}>
+              {selectedDate.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </span>
+            <button onClick={() => onChangeDate(1)} className="p-1.5 hover:bg-white rounded-xl transition-all shadow-sm active:scale-95 text-[#5A7368] hover:text-[#1E5C36]">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          <div className="flex gap-3">
+            {/* NOWY GUZIK GENEROWANIA */}
+            <button onClick={onGeneratePlan} className="flex items-center gap-2 px-5 py-2.5 bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]/30 rounded-xl text-sm font-bold hover:bg-[#2D9E6B] hover:text-white transition-all shadow-sm active:scale-95">
+              <RefreshCw size={18} /> Generuj plan
+            </button>
+            <button onClick={onOpenTaskModal} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8DDD0] text-[#1A2F22] rounded-xl text-sm font-bold hover:bg-[#F5EFE6] hover:border-[#2D9E6B] transition-all shadow-sm active:scale-95">
+              Dodaj zadanie <Plus size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1398,10 +1415,12 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
 // ═══════════════════════════════════════════════════
 //  MOOD VIEW (ZAAWANSOWANA ANALITYKA NASTROJU)
 // ═══════════════════════════════════════════════════
-function MoodView({ moods, onOpenModal }) {
+function MoodView({ moods, onOpenModal, onEditMood }) {
   const H = { fontFamily: "'Lora', serif" };
   const [filter, setFilter] = useState("Kwartał");
   const [hovered, setHovered] = useState(null);
+  const [editingMood, setEditingMood] = useState(null);
+  const [editingNote, setEditingNote] = useState("");
   const [showAvg, setShowAvg] = useState(false);
 
   let daysToShow = 90;
@@ -1421,8 +1440,11 @@ function MoodView({ moods, onOpenModal }) {
   let countV = 0;
 
   moods.forEach(m => {
-    const d = new Date(m.d);
+    // Bezpieczne parsowanie daty bez przesunięć UTC
+    const [y, mo, da] = m.d.split('-');
+    const d = new Date(parseInt(y), parseInt(mo) - 1, parseInt(da));
     d.setHours(0, 0, 0, 0);
+
     const diffDays = Math.round((today - d) / (1000 * 60 * 60 * 24));
 
     if (diffDays >= 0 && diffDays < daysToShow) {
@@ -1475,7 +1497,7 @@ function MoodView({ moods, onOpenModal }) {
       </div>
 
       {/* GŁÓWNY KONTENER WYKRESU */}
-      <div className="bg-white rounded-[2.5rem] border border-[#E8DDD0] p-10 shadow-sm relative overflow-hidden">
+      <div className="bg-white rounded-[2.5rem] border border-[#E8DDD0] p-10 shadow-sm relative">
         <div className="flex justify-between items-center mb-12 pl-12">
           <h3 className="font-bold text-[#1A2F22]">Wykres Twojego nastroju w czasie</h3>
           <div className="flex items-center gap-1 bg-[#F5EFE6] p-1 rounded-xl">
@@ -1535,16 +1557,19 @@ function MoodView({ moods, onOpenModal }) {
             {points.map((p, i) => (
               <g key={i}>
                 <circle cx={p.x} cy={p.y} r={4} fill="#2D9E6B" />
-                {hovered?.id === p.data.id && <circle cx={p.x} cy={p.y} r={8} fill="#1E5C36" className="animate-ping opacity-30" />}
-                <circle cx={p.x} cy={p.y} r={hitRadius} fill="transparent" className="cursor-pointer" onMouseEnter={() => setHovered(p.data)} onMouseLeave={() => setHovered(null)} />
+                {hovered?.d === p.data.d && <circle cx={p.x} cy={p.y} r={8} fill="#1E5C36" className="animate-ping opacity-30" />}
+                <circle cx={p.x} cy={p.y} r={hitRadius} fill="transparent" className="cursor-pointer" onMouseEnter={() => !editingMood && setHovered(p.data)} onMouseLeave={() => !editingMood && setHovered(null)} onClick={() => { setHovered(null); setEditingMood(p.data); setEditingNote(p.data.note || ""); }} />
               </g>
             ))}
           </svg>
 
-          {/* DYMEK INFORMACYJNY */}
-          {hovered && (
-            <div className="absolute z-50 bg-white border border-[#2D9E6B]/30 shadow-2xl rounded-2xl p-4 w-72 pointer-events-none transform -translate-x-1/2 -translate-y-[115%]"
-              style={{ left: `${(points.find(p => p.data.id === hovered.id)?.x / width) * 100}%`, top: `${(points.find(p => p.data.id === hovered.id)?.y / height) * 100}%` }}>
+          {/* DYMEK INFORMACYJNY (HOVER) */}
+          {hovered && !editingMood && (
+            <div className={`absolute z-50 bg-white border border-[#2D9E6B]/30 shadow-2xl rounded-2xl p-4 w-72 pointer-events-none transform -translate-y-[115%] ${((points.find(p => p.data.d === hovered.d)?.x / width) * 100) > 80 ? '-translate-x-[90%]' :
+                ((points.find(p => p.data.d === hovered.d)?.x / width) * 100) < 20 ? '-translate-x-[10%]' :
+                  '-translate-x-1/2'
+              }`}
+              style={{ left: `${(points.find(p => p.data.d === hovered.d)?.x / width) * 100}%`, top: `${(points.find(p => p.data.d === hovered.d)?.y / height) * 100}%` }}>
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-3xl">{EMOJIS[hovered.v]}</span>
@@ -1553,6 +1578,50 @@ function MoodView({ moods, onOpenModal }) {
                 <span className="text-[10px] font-black text-[#9FB5AD]">{hovered.d}</span>
               </div>
               <p className="text-xs text-[#5A7368] mt-2 leading-relaxed italic border-l-2 border-[#E8DDD0] pl-2">"{hovered.note || "Brak notatki."}"</p>
+              <p className="text-[10px] text-[#9FB5AD] mt-3 font-bold uppercase tracking-wider text-center">Kliknij kropkę, aby edytować</p>
+            </div>
+          )}
+
+          {/* DYMEK EDYCJI (CLICK) */}
+          {editingMood && (
+            <div className={`absolute z-50 bg-white border-2 border-[#2D9E6B] shadow-2xl rounded-3xl p-5 w-96 transform -translate-y-[105%] ${((points.find(p => p.data.d === editingMood.d)?.x / width) * 100) > 80 ? '-translate-x-[95%]' :
+                ((points.find(p => p.data.d === editingMood.d)?.x / width) * 100) < 20 ? '-translate-x-[5%]' :
+                  '-translate-x-1/2'
+              }`}
+              style={{ left: `${(points.find(p => p.data.d === editingMood.d)?.x / width) * 100}%`, top: `${(points.find(p => p.data.d === editingMood.d)?.y / height) * 100}%` }}>
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-sm font-bold text-[#1A2F22]">Edytuj dzień: <span className="text-[#2D9E6B]">{editingMood.d}</span></span>
+                <button onClick={() => setEditingMood(null)} className="text-[#9FB5AD] hover:text-red-500 transition-colors bg-red-50 p-1.5 rounded-full"><X size={16} /></button>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-xs font-bold text-[#5A7368] mb-2 uppercase tracking-wide">Notatka:</p>
+                <textarea
+                  value={editingNote}
+                  onChange={(e) => setEditingNote(e.target.value)}
+                  placeholder="Jak minął dzień?"
+                  className="w-full bg-[#F5EFE6] border border-[#E8DDD0] rounded-xl p-3 text-sm focus:outline-none focus:border-[#2D9E6B] resize-none h-20 transition-all placeholder:text-[#9FB5AD]"
+                />
+              </div>
+
+              <div className="mb-2">
+                <p className="text-xs font-bold text-[#5A7368] mb-2 uppercase tracking-wide">Nastrój:</p>
+                <div className="flex gap-1 justify-between">
+                  {EMOJIS.map((emoji, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        onEditMood(editingMood.d, index, editingNote);
+                        setEditingMood(null);
+                      }}
+                      className={`text-2xl p-1.5 rounded-xl hover:bg-[#F5EFE6] transition-all hover:scale-125 ${editingMood.v === index ? 'bg-[#E8F4ED] scale-110 shadow-sm border border-[#2D9E6B]/30' : ''}`}
+                      title={MOOD_L[index]}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1656,7 +1725,8 @@ export default function App() {
   }, [user, view]);
 
   useEffect(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const nowLocal = new Date();
+    const todayStr = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
     const moodToday = moods.find(m => m.d === todayStr);
 
     // 1. WYCHWYĆ START DNIA (Lub odświeżenie)
@@ -1688,7 +1758,8 @@ export default function App() {
   };
 
   const sortSmartQueue = (tasksList) => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const nowLocal = new Date();
+    const todayStr = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
     const lastMood = moods.length > 0 ? moods[moods.length - 1].v : 2;
 
     const getScore = (task) => {
@@ -1725,7 +1796,7 @@ export default function App() {
     const timelineStart = 6;
     const dayLimitMins = 21 * 60;
     let currentPointer = timelineStart * 60;
-    const dateStr = selectedDate.toISOString().split("T")[0];
+    const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
     // 1. Wyodrębniamy sztywne bloki (dla selectedDate)
     const lockedBlocks = tasks
@@ -1803,6 +1874,18 @@ export default function App() {
     add("Zadanie cofnięto do backlogu.");
   };
 
+  const handleEditMood = (dateStr, newV, newNote) => {
+    setMoods(prev => {
+      const exists = prev.find(m => m.d === dateStr);
+      if (exists) {
+        return prev.map(m => m.d === dateStr ? { ...m, v: newV, note: newNote !== undefined ? newNote : m.note } : m);
+      } else {
+        return [{ id: Date.now(), d: dateStr, v: newV, note: newNote || "" }, ...prev];
+      }
+    });
+    add("Zaktualizowano nastrój dla dnia " + dateStr);
+  };
+
   const toggleTask = (id) => {
     setTasks(prevTasks => {
       let updated = prevTasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
@@ -1841,8 +1924,9 @@ export default function App() {
 
   const addMood = (m) => {
     setMoods(prev => {
-      // Pobieramy dzisiejszą datę w formacie YYYY-MM-DD
-      const todayStr = new Date().toISOString().split("T")[0];
+      // Pobieramy dzisiejszą datę w formacie YYYY-MM-DD (lokalnie, bez UTC!)
+      const nowL = new Date();
+      const todayStr = `${nowL.getFullYear()}-${String(nowL.getMonth() + 1).padStart(2, '0')}-${String(nowL.getDate()).padStart(2, '0')}`;
 
       // Szukamy, czy dzisiaj już wprowadzono nastrój
       const existingIndex = prev.findIndex(mood => mood.d === todayStr);
@@ -1892,19 +1976,10 @@ export default function App() {
             {/* NOWY HEADER ZE STREAKIEM (1 do 1 z HTML) */}
             <header className="w-full px-8 py-6 flex items-center justify-between border-b border-[#E8DDD0] bg-white sticky top-0 z-[60]">
               <div className="flex items-center space-x-6">
-                <span className="text-3xl font-bold text-[#164229]">Cześć {user?.name || "Natalia"}!</span>
-
-                <div className="flex items-center gap-2 bg-[#F5EFE6] px-3 py-1.5 rounded-2xl border border-[#E8DDD0]">
-                  <button onClick={() => setSelectedDate(d => { const nd = new Date(d); nd.setDate(d.getDate() - 1); return nd; })} className="p-1.5 hover:bg-white rounded-xl transition-all shadow-sm active:scale-95 text-[#5A7368] hover:text-[#1E5C36]">
-                    <ChevronLeft size={18} />
-                  </button>
-                  <span className="text-sm font-bold text-[#1E5C36] capitalize min-w-[130px] text-center" style={{ fontFamily: "'Lora', serif" }}>
-                    {selectedDate.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  </span>
-                  <button onClick={() => setSelectedDate(d => { const nd = new Date(d); nd.setDate(d.getDate() + 1); return nd; })} className="p-1.5 hover:bg-white rounded-xl transition-all shadow-sm active:scale-95 text-[#5A7368] hover:text-[#1E5C36]">
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
+                <span className="text-3xl font-bold text-[#164229] flex items-baseline gap-2">
+                  <span>Dzień dobry {user?.name || "Natalia"},</span>
+                  <span className="capitalize">{new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                </span>
               </div>
 
               <div className="flex items-center bg-[#F3F4F6] rounded-full px-8 py-2.5 space-x-6">
@@ -1980,6 +2055,7 @@ export default function App() {
                   tasks={tasks}
                   moods={moods}
                   selectedDate={selectedDate}
+                  onChangeDate={(offset) => setSelectedDate(d => { const nd = new Date(d); nd.setDate(d.getDate() + offset); return nd; })}
                   onToggle={toggleTask}
                   onOpenTaskModal={() => { setEditingTask(null); setIsTaskModalOpen(true); }}
                   onEditTask={handleEditTask}
@@ -2010,6 +2086,7 @@ export default function App() {
                 <MoodView
                   moods={moods}
                   onOpenModal={() => setShowMoodModal(true)}
+                  onEditMood={handleEditMood}
                 />
               )}
               {activeTab === "warning" && <WarningView loading={isLoading} user={user} />}
