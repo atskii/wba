@@ -188,7 +188,34 @@ const INIT_TASKS = [
   { id: 22, title: "Naprawa kranu 🔧", w: 5, p: "niski", done: false, duration: "30 min", deadline: "", difficulty: 3, desc: "Cieknie w kuchni.", isLocked: false, t: "" },
   { id: 23, title: "Obiad z rodziną 🍽️", w: 2, p: "niski", done: false, duration: "90 min", deadline: "", difficulty: 1, desc: "Wspólny czas.", isLocked: true, t: `🔒 13:00 (${day5PL})` },
   { id: 24, title: "Planowanie kolejnego sprintu 🏃‍♂️", w: 6, p: "sredni", done: false, duration: "60 min", deadline: `${day5YMD} o 16:00`, difficulty: 3, desc: "Zaległości z backlogu.", isLocked: false, t: "" },
-  { id: 25, title: "Trening cardio 🏃", w: 4, p: "sredni", done: false, duration: "45 min", deadline: "", difficulty: 4, desc: "Poprawa kondycji.", isLocked: false, t: "" }
+  { id: 25, title: "Trening cardio 🏃", w: 4, p: "sredni", done: false, duration: "45 min", deadline: "", difficulty: 4, desc: "Poprawa kondycji.", isLocked: false, t: "" },
+
+  // --- DZIEŃ 6 i DALSZE ORAZ BACKLOG (MIX PARAMETRÓW) ---
+  { id: 26, title: "Zrobienie prania 🧺", w: 2, p: "niski", done: false, duration: "15 min", deadline: "", difficulty: 1, desc: "Szybki program na 30 stopni. Nie zapomnij o ciemnych kolorach.", isLocked: false, t: "" },
+  { id: 27, title: "Raport kwartalny Q3 📈", w: 9, p: "wysoki", done: false, duration: "120 min", deadline: `${day3YMD} o 15:00`, difficulty: 5, desc: "Wymaga pełnego skupienia. Zebrać dane z Excela i spiąć w prezentację.", isLocked: false, t: "" },
+  { id: 28, title: "Wieczorna medytacja 🌙", w: 2, p: "niski", done: false, duration: "20 min", deadline: "", difficulty: 1, desc: "Wyciszenie przed snem. Aplikacja Headspace.", isLocked: true, t: `🔒 21:30 (${todayPL}) 🔁 codziennie` },
+  { id: 29, title: "Spotkanie 1:1 z szefem 🤝", w: 7, p: "wysoki", done: false, duration: "30 min", deadline: "", difficulty: 3, desc: "Rozmowa o podwyżce i celach na kolejny kwartał.", isLocked: true, t: `🔒 10:00 (${day2PL})` },
+  { id: 30, title: "Przegląd subskrypcji i opłaty 💳", w: 4, p: "sredni", done: true, duration: "45 min", deadline: "", difficulty: 2, desc: "Anulować Netflixa, opłacić rachunek za prąd.", isLocked: false, t: "" },
+  { id: 31, title: "Trening siłowy 🏋️‍♂️", w: 6, p: "sredni", done: false, duration: "60 min", deadline: "", difficulty: 4, desc: "Dzień nóg. Pamiętać o rozgrzewce!", isLocked: true, t: `🔒 18:00 (${todayPL}) 🔁 co tydzień` },
+  { id: 32, title: "Aktualizacja CV 📄", w: 5, p: "sredni", done: false, duration: "90 min", deadline: `${day4YMD} o 23:59`, difficulty: 3, desc: "Dopisać nowy projekt i zaktualizować technologie.", isLocked: false, t: "" },
+  { id: 33, title: "Telefon do babci 👵", w: 8, p: "wysoki", done: true, duration: "20 min", deadline: "", difficulty: 1, desc: "Zapytać o zdrowie i opowiedzieć o nowej pracy.", isLocked: false, t: "" },
+  { id: 34, title: "Odpisywanie na zaległe maile 📩", w: 4, p: "niski", done: false, duration: "30 min", deadline: "", difficulty: 2, desc: "Cel: Skrzynka odbiorcza (Inbox) Zero.", isLocked: false, t: "" },
+  { id: 35, title: "Głęboka praca nad kodem 👨‍💻", w: 10, p: "wysoki", done: false, duration: "180 min", deadline: "", difficulty: 5, desc: "Implementacja nowego algorytmu. Tylko muzyka lo-fi, brak rozpraszaczy.", isLocked: true, t: `🔒 07:00 (${day3PL})` },
+  { id: 36, title: "Rozpisanie diety 🥗", w: 3, p: "sredni", done: false, duration: "40 min", deadline: "", difficulty: 2, desc: "Lista posiłków na najbliższe dni i zrobienie listy zakupów.", isLocked: false, t: "" },
+  { id: 37, title: "Posprzątanie pulpitu 💻", w: 1, p: "niski", done: false, duration: "10 min", deadline: "", difficulty: 1, desc: "Usunięcie starych screenów do kosza.", isLocked: false, t: "" },
+  { id: 38, title: "Wymiana żarówek w przedpokoju 💡", w: 2, p: "niski", done: false, duration: "15 min", deadline: "", difficulty: 1, desc: "Kupić ciepłe światło w markecie budowlanym.", isLocked: false, t: "" },
+  { id: 39, title: "Obejrzenie wykładu z psychologii 🧠", w: 5, p: "sredni", done: false, duration: "90 min", deadline: `${day5YMD} o 12:00`, difficulty: 4, desc: "Zrobić dokładne notatki w Notion.", isLocked: false, t: "" },
+  { id: 40, title: "Wyjście z psem do parku 🐕", w: 3, p: "wysoki", done: false, duration: "45 min", deadline: "", difficulty: 1, desc: "Zwierzak potrzebuje więcej ruchu na świeżym powietrzu.", isLocked: true, t: `🔒 16:30 (${todayPL})` },
+  { id: 41, title: "Analiza błędów w aplikacji 🐛", w: 8, p: "wysoki", done: false, duration: "120 min", deadline: `${todayYMD} o 18:00`, difficulty: 5, desc: "Przejrzeć logi z Sentry i namierzyć wycieki pamięci.", isLocked: false, t: "" },
+  { id: 42, title: "Wizyta w urzędzie 🏢", w: 7, p: "wysoki", done: false, duration: "90 min", deadline: "", difficulty: 3, desc: "Odbiór dokumentów. Pamiętać o dowodzie osobistym!", isLocked: true, t: `🔒 11:30 (${day4PL})` },
+  { id: 43, title: "Przesadzenie Monstery 🪴", w: 2, p: "niski", done: false, duration: "40 min", deadline: "", difficulty: 2, desc: "Kupić nową ziemię i większą doniczkę ceramiczną.", isLocked: false, t: "" },
+  { id: 44, title: "Burza mózgów - marketing 🎯", w: 6, p: "sredni", done: false, duration: "60 min", deadline: "", difficulty: 4, desc: "Wymyślenie 5 nowych kampanii reklamowych.", isLocked: false, t: "" },
+  { id: 45, title: "Wieczorny spacer (Odcięcie) 🚶‍♀️", w: 2, p: "niski", done: false, duration: "30 min", deadline: "", difficulty: 1, desc: "Wyjście całkowicie bez telefonu i słuchawek.", isLocked: true, t: `🔒 20:30 (${day2PL})` },
+  { id: 46, title: "Zaplanowanie wyjazdu na weekend 🗺️", w: 3, p: "niski", done: false, duration: "60 min", deadline: "", difficulty: 2, desc: "Zarezerwować nocleg, sprawdzić trasę i koszty.", isLocked: false, t: "" },
+  { id: 47, title: "Szybki power nap 😴", w: 1, p: "niski", done: true, duration: "20 min", deadline: "", difficulty: 1, desc: "Regeneracja mózgu w środku ciężkiego dnia.", isLocked: false, t: "" },
+  { id: 48, title: "Przejrzenie rachunków 🧾", w: 4, p: "sredni", done: false, duration: "25 min", deadline: `${day2YMD} o 10:00`, difficulty: 3, desc: "Wpisać wszystkie kwoty do domowego budżetu w Excelu.", isLocked: false, t: "" },
+  { id: 49, title: "Składanie mebli z IKEA 🪑", w: 5, p: "sredni", done: false, duration: "120 min", deadline: "", difficulty: 4, desc: "Nowa komoda do sypialni. Oby nie zabrakło śrubek.", isLocked: false, t: "" },
+  { id: 50, title: "Wdrożenie zmian na produkcję ⚠️", w: 9, p: "wysoki", done: false, duration: "45 min", deadline: "", difficulty: 5, desc: "Bardzo krytyczny proces, wymaga podwójnego sprawdzenia wszystkiego.", isLocked: true, t: `🔒 02:00 (${day5PL})` }
 ];
 
 
@@ -1566,8 +1593,8 @@ function MoodView({ moods, onOpenModal, onEditMood }) {
           {/* DYMEK INFORMACYJNY (HOVER) */}
           {hovered && !editingMood && (
             <div className={`absolute z-50 bg-white border border-[#2D9E6B]/30 shadow-2xl rounded-2xl p-4 w-72 pointer-events-none transform -translate-y-[115%] ${((points.find(p => p.data.d === hovered.d)?.x / width) * 100) > 80 ? '-translate-x-[90%]' :
-                ((points.find(p => p.data.d === hovered.d)?.x / width) * 100) < 20 ? '-translate-x-[10%]' :
-                  '-translate-x-1/2'
+              ((points.find(p => p.data.d === hovered.d)?.x / width) * 100) < 20 ? '-translate-x-[10%]' :
+                '-translate-x-1/2'
               }`}
               style={{ left: `${(points.find(p => p.data.d === hovered.d)?.x / width) * 100}%`, top: `${(points.find(p => p.data.d === hovered.d)?.y / height) * 100}%` }}>
               <div className="flex justify-between items-start mb-2">
@@ -1585,8 +1612,8 @@ function MoodView({ moods, onOpenModal, onEditMood }) {
           {/* DYMEK EDYCJI (CLICK) */}
           {editingMood && (
             <div className={`absolute z-50 bg-white border-2 border-[#2D9E6B] shadow-2xl rounded-3xl p-5 w-96 transform -translate-y-[105%] ${((points.find(p => p.data.d === editingMood.d)?.x / width) * 100) > 80 ? '-translate-x-[95%]' :
-                ((points.find(p => p.data.d === editingMood.d)?.x / width) * 100) < 20 ? '-translate-x-[5%]' :
-                  '-translate-x-1/2'
+              ((points.find(p => p.data.d === editingMood.d)?.x / width) * 100) < 20 ? '-translate-x-[5%]' :
+                '-translate-x-1/2'
               }`}
               style={{ left: `${(points.find(p => p.data.d === editingMood.d)?.x / width) * 100}%`, top: `${(points.find(p => p.data.d === editingMood.d)?.y / height) * 100}%` }}>
               <div className="flex justify-between items-center mb-4">
@@ -1723,6 +1750,49 @@ export default function App() {
   useEffect(() => {
     if (view === "landing" && user) setView("app");
   }, [user, view]);
+
+  // --- SKRÓTY KLAWISZOWE: Shift+T (losowe zadania) i Shift+Y (wyczyść zadania) ---
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignoruj, gdy użytkownik pisze w polu tekstowym lub nie jest w widoku apki
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+      if (view !== 'app') return;
+
+      // Shift+T → Dodaj 20 losowych zadań z puli INIT_TASKS
+      if (e.shiftKey && e.key === 'T') {
+        e.preventDefault();
+        const shuffled = [...INIT_TASKS].sort(() => Math.random() - 0.5);
+        const picked = shuffled.slice(0, 20);
+
+        setTasks(prev => {
+          let updated = [...prev];
+          picked.forEach(newTask => {
+            const isCyclic = newTask.t && newTask.t.includes('🔁');
+            const existingIndex = updated.findIndex(t => t.title === newTask.title);
+            if (existingIndex >= 0) {
+              if (isCyclic) {
+                updated[existingIndex] = { ...newTask, id: updated[existingIndex].id, done: updated[existingIndex].done };
+              }
+            } else {
+              updated.push({ ...newTask, id: Date.now() + Math.random(), done: newTask.done, sMins: null, eMins: null, pDate: null });
+            }
+          });
+          return updated;
+        });
+        add(`Dodano losowe zadania z puli testowej (Shift+T)`);
+      }
+
+      // Shift+Y → Wyczyść WSZYSTKIE zadania
+      if (e.shiftKey && e.key === 'Y') {
+        e.preventDefault();
+        setTasks([]);
+        add('Usunięto wszystkie zadania (Shift+Y)');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [view, setTasks, add]);
 
   useEffect(() => {
     const nowLocal = new Date();
