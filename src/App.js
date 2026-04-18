@@ -1036,7 +1036,7 @@ function StreakPlant({ tasks }) {
 // ═══════════════════════════════════════════════════
 //  DASHBOARD VIEW (ZAMROŻONY PLAN Z GUZIKIEM GENERUJ)
 // ═══════════════════════════════════════════════════
-function DashboardView({ tasks, moods, selectedDate, onToggle, onOpenTaskModal, onEditTask, onDelete, onAlert, onFocusTask, loading, onGeneratePlan }) {
+function DashboardView({ tasks, moods, selectedDate, onToggle, onOpenTaskModal, onEditTask, onDelete, onReturnToBacklog, onAlert, onFocusTask, loading, onGeneratePlan }) {
   const H = { fontFamily: "'Lora', serif" };
   const [showBacklog, setShowBacklog] = useState(false);
 
@@ -1045,12 +1045,20 @@ function DashboardView({ tasks, moods, selectedDate, onToggle, onOpenTaskModal, 
   const timelineStart = 6;
   const dateStr = selectedDate.toISOString().split("T")[0];
 
-  const scheduled = tasks.filter(t => t.sMins !== null && t.sMins !== undefined && t.pDate === dateStr).sort((a, b) => a.sMins - b.sMins);
+  const flexScheduled = tasks.filter(t => !t.isLocked && t.sMins !== null && t.sMins !== undefined && t.pDate === dateStr);
+  const lockedScheduled = tasks.filter(t => t.isLocked && t.t && checkIsDate(t.t, selectedDate)).map(t => {
+      const match = t.t.match(/(\d{1,2}):(\d{2})/);
+      const startMins = match ? parseInt(match[1]) * 60 + parseInt(match[2]) : 0;
+      const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
+      const duration = durMatch ? parseInt(durMatch[1]) : 60;
+      return { ...t, sMins: startMins, eMins: startMins + duration };
+  });
 
-  // Zabezpieczony Backlog (brak zaplanowanej daty)
+  const scheduled = [...flexScheduled, ...lockedScheduled].sort((a, b) => a.sMins - b.sMins);
+
+  // Zabezpieczony Backlog (brak zaplanowanej daty i niezablokowane)
   const backlog = tasks.filter(t =>
-    (!t.pDate) &&
-    (!t.isLocked || !t.t || checkIsDate(t.t, selectedDate))
+    (!t.pDate) && (!t.isLocked)
   );
 
   const timelineWithGaps = [];
@@ -1130,6 +1138,11 @@ function DashboardView({ tasks, moods, selectedDate, onToggle, onOpenTaskModal, 
                     </div>
                     <div className={`absolute top-0 right-0 flex items-center gap-1.5 transition-all z-30 ${t.done ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                       {!t.done && <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Play size={14} className="ml-0.5" /></button>}
+                      {!t.isLocked && !t.done && (
+                        <button onClick={(e) => { e.stopPropagation(); onReturnToBacklog(t.id); }} title="Cofnij do backlogu" className="w-8 h-8 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all">
+                          <RotateCcw size={14} />
+                        </button>
+                      )}
                       <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Trash2 size={14} /></button>
                       <button onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}><Check size={14} /></button>
                     </div>
@@ -1722,26 +1735,16 @@ export default function App() {
         const startMins = match ? parseInt(match[1]) * 60 + parseInt(match[2]) : 0;
         const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
         const duration = durMatch ? parseInt(durMatch[1]) : 60;
-        return { ...t, sMins: startMins, eMins: startMins + duration, pDate: dateStr };
+        return { ...t, sMins: startMins, eMins: startMins + duration };
       })
       .sort((a, b) => a.sMins - b.sMins);
 
     // 2. Szeregiem ustawiamy resztę zadań (flex) - resetujemy TYLKO dla bieżącego dnia lub z backlogu
     const updatedTasks = tasks.map(t => {
-      if (t.pDate === dateStr || (!t.pDate && !t.isLocked)) {
+      if (!t.isLocked && (t.pDate === dateStr || !t.pDate)) {
         return { ...t, sMins: null, eMins: null };
       }
       return t;
-    });
-
-    // Najpierw przypisujemy pozycje zablokowanym
-    lockedBlocks.forEach(lb => {
-      const idx = updatedTasks.findIndex(t => t.id === lb.id);
-      if (idx !== -1) {
-        updatedTasks[idx].sMins = lb.sMins;
-        updatedTasks[idx].eMins = lb.eMins;
-        updatedTasks[idx].pDate = dateStr;
-      }
     });
 
     // Teraz wypełniamy luki zadaniami z kolejki (flex)
@@ -1793,6 +1796,11 @@ export default function App() {
 
     setTasks(updatedTasks);
     add(`Plan dnia (${selectedDate.toLocaleDateString('pl-PL')}) został wygenerowany! ✨`);
+  };
+
+  const returnToBacklog = (id) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, sMins: null, eMins: null, pDate: null } : t));
+    add("Zadanie cofnięto do backlogu.");
   };
 
   const toggleTask = (id) => {
@@ -1976,6 +1984,7 @@ export default function App() {
                   onOpenTaskModal={() => { setEditingTask(null); setIsTaskModalOpen(true); }}
                   onEditTask={handleEditTask}
                   onDelete={deleteTask}
+                  onReturnToBacklog={returnToBacklog}
                   onFocusTask={setFocusedTask}
                   onAlert={() => {
                     add("Wykryto sygnał ostrzegawczy. Przejdź do Systemu Ostrzegania.", "warn");
