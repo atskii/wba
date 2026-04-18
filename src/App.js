@@ -192,14 +192,14 @@ const INIT_TASKS = [
 
 
 // --- GLOBAL HELPER ---
-const checkIsToday = (textString) => {
+const checkIsDate = (textString, targetDate) => {
   if (!textString) return false;
   const txt = textString.toLowerCase();
-  const now = new Date();
-  const selYear = now.getFullYear();
-  const selMonth = now.getMonth() + 1;
-  const selDay = now.getDate();
-  const selDateOnly = new Date(selYear, now.getMonth(), selDay);
+  const d = targetDate || new Date();
+  const selYear = d.getFullYear();
+  const selMonth = d.getMonth() + 1;
+  const selDay = d.getDate();
+  const selDateOnly = new Date(selYear, d.getMonth(), selDay);
 
   const endMatch = txt.match(/🛑 do (\d{4})-(\d{1,2})-(\d{1,2})/);
   if (endMatch) {
@@ -213,7 +213,7 @@ const checkIsToday = (textString) => {
     if (selDateOnly < startDate) return false;
   }
 
-  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const dayOfWeek = d.getDay() === 0 ? 6 : d.getDay() - 1;
   const daysArr = ["pon", "wt", "śr", "czw", "pt", "sob", "ndz"];
 
   if (txt.includes("codziennie") || txt.includes("każdego dnia")) return true;
@@ -1036,19 +1036,21 @@ function StreakPlant({ tasks }) {
 // ═══════════════════════════════════════════════════
 //  DASHBOARD VIEW (ZAMROŻONY PLAN Z GUZIKIEM GENERUJ)
 // ═══════════════════════════════════════════════════
-function DashboardView({ tasks, moods, onToggle, onOpenTaskModal, onEditTask, onDelete, onAlert, onFocusTask, loading, onGeneratePlan }) {
+function DashboardView({ tasks, moods, selectedDate, onToggle, onOpenTaskModal, onEditTask, onDelete, onAlert, onFocusTask, loading, onGeneratePlan }) {
   const H = { fontFamily: "'Lora', serif" };
   const [showBacklog, setShowBacklog] = useState(false);
 
   if (loading) return <SkeletonScreen />;
 
   const timelineStart = 6;
-  const scheduled = tasks.filter(t => t.sMins !== null && t.sMins !== undefined).sort((a, b) => a.sMins - b.sMins);
+  const dateStr = selectedDate.toISOString().split("T")[0];
 
-  // Zabezpieczony Backlog (tylko na dziś)
+  const scheduled = tasks.filter(t => t.sMins !== null && t.sMins !== undefined && t.pDate === dateStr).sort((a, b) => a.sMins - b.sMins);
+
+  // Zabezpieczony Backlog (brak zaplanowanej daty)
   const backlog = tasks.filter(t =>
-    (t.sMins === null || t.sMins === undefined) &&
-    (!t.isLocked || !t.t || checkIsToday(t.t))
+    (!t.pDate) &&
+    (!t.isLocked || !t.t || checkIsDate(t.t, selectedDate))
   );
 
   const timelineWithGaps = [];
@@ -1710,32 +1712,41 @@ export default function App() {
     const timelineStart = 6;
     const dayLimitMins = 21 * 60;
     let currentPointer = timelineStart * 60;
+    const dateStr = selectedDate.toISOString().split("T")[0];
 
-    // 1. Wyodrębniamy sztywne bloki (tylko na dzisiaj)
+    // 1. Wyodrębniamy sztywne bloki (dla selectedDate)
     const lockedBlocks = tasks
-      .filter(t => t.isLocked && t.t && checkIsToday(t.t))
+      .filter(t => t.isLocked && t.t && checkIsDate(t.t, selectedDate))
       .map(t => {
         const match = t.t.match(/(\d{1,2}):(\d{2})/);
         const startMins = match ? parseInt(match[1]) * 60 + parseInt(match[2]) : 0;
         const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
         const duration = durMatch ? parseInt(durMatch[1]) : 60;
-        return { ...t, sMins: startMins, eMins: startMins + duration };
+        return { ...t, sMins: startMins, eMins: startMins + duration, pDate: dateStr };
       })
       .sort((a, b) => a.sMins - b.sMins);
 
-    // 2. Szeregiem ustawiamy resztę zadań (flex)
-    const updatedTasks = tasks.map(t => ({ ...t, sMins: null, eMins: null })); // Resetujemy stare pozycje
+    // 2. Szeregiem ustawiamy resztę zadań (flex) - resetujemy TYLKO dla bieżącego dnia lub z backlogu
+    const updatedTasks = tasks.map(t => {
+      if (t.pDate === dateStr || (!t.pDate && !t.isLocked)) {
+        return { ...t, sMins: null, eMins: null };
+      }
+      return t;
+    });
 
     // Najpierw przypisujemy pozycje zablokowanym
     lockedBlocks.forEach(lb => {
       const idx = updatedTasks.findIndex(t => t.id === lb.id);
-      updatedTasks[idx].sMins = lb.sMins;
-      updatedTasks[idx].eMins = lb.eMins;
+      if (idx !== -1) {
+        updatedTasks[idx].sMins = lb.sMins;
+        updatedTasks[idx].eMins = lb.eMins;
+        updatedTasks[idx].pDate = dateStr;
+      }
     });
 
     // Teraz wypełniamy luki zadaniami z kolejki (flex)
     const flexTasks = updatedTasks
-      .filter(t => !t.sMins && !t.done)
+      .filter(t => (t.pDate === dateStr || (!t.pDate && !t.isLocked)) && !t.sMins && !t.done)
       .sort((a, b) => {
         if (a.p === "wysoki" && b.p !== "wysoki") return -1;
         if (a.p !== "wysoki" && b.p === "wysoki") return 1;
@@ -1750,11 +1761,11 @@ export default function App() {
       // --- DYNAMICZNY BUFOR (Zasada 52/17) ---
       let breakTime = 0;
       if (duration >= 50) {
-        breakTime = 17; // Długa przerwa po ciężkim bloku
+        breakTime = 17;
       } else if (duration >= 25) {
-        breakTime = Math.round((duration / 52) * 17); // Proporcjonalna przerwa (ok. 8-12 min)
+        breakTime = Math.round((duration / 52) * 17);
       } else {
-        breakTime = 3; // Tylko 3 minuty na "przełączenie się" przy krótkich taskach
+        breakTime = 3;
       }
 
       let fits = false;
@@ -1771,14 +1782,17 @@ export default function App() {
 
       if (currentPointer + visualDuration <= dayLimitMins) {
         const idx = updatedTasks.findIndex(ut => ut.id === t.id);
-        updatedTasks[idx].sMins = currentPointer;
-        updatedTasks[idx].eMins = currentPointer + duration;
+        if (idx !== -1) {
+          updatedTasks[idx].sMins = currentPointer;
+          updatedTasks[idx].eMins = currentPointer + duration;
+          updatedTasks[idx].pDate = dateStr;
+        }
         currentPointer += (visualDuration + breakTime);
       }
     });
 
     setTasks(updatedTasks);
-    add("Plan dnia został wygenerowany! ✨");
+    add(`Plan dnia (${selectedDate.toLocaleDateString('pl-PL')}) został wygenerowany! ✨`);
   };
 
   const toggleTask = (id) => {
@@ -1869,8 +1883,20 @@ export default function App() {
 
             {/* NOWY HEADER ZE STREAKIEM (1 do 1 z HTML) */}
             <header className="w-full px-8 py-6 flex items-center justify-between border-b border-[#E8DDD0] bg-white sticky top-0 z-[60]">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-6">
                 <span className="text-3xl font-bold text-[#164229]">Cześć {user?.name || "Natalia"}!</span>
+
+                <div className="flex items-center gap-2 bg-[#F5EFE6] px-3 py-1.5 rounded-2xl border border-[#E8DDD0]">
+                  <button onClick={() => setSelectedDate(d => { const nd = new Date(d); nd.setDate(d.getDate() - 1); return nd; })} className="p-1.5 hover:bg-white rounded-xl transition-all shadow-sm active:scale-95 text-[#5A7368] hover:text-[#1E5C36]">
+                    <ChevronLeft size={18} />
+                  </button>
+                  <span className="text-sm font-bold text-[#1E5C36] capitalize min-w-[130px] text-center" style={{ fontFamily: "'Lora', serif" }}>
+                    {selectedDate.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </span>
+                  <button onClick={() => setSelectedDate(d => { const nd = new Date(d); nd.setDate(d.getDate() + 1); return nd; })} className="p-1.5 hover:bg-white rounded-xl transition-all shadow-sm active:scale-95 text-[#5A7368] hover:text-[#1E5C36]">
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center bg-[#F3F4F6] rounded-full px-8 py-2.5 space-x-6">
@@ -1945,6 +1971,7 @@ export default function App() {
                 <DashboardView
                   tasks={tasks}
                   moods={moods}
+                  selectedDate={selectedDate}
                   onToggle={toggleTask}
                   onOpenTaskModal={() => { setEditingTask(null); setIsTaskModalOpen(true); }}
                   onEditTask={handleEditTask}
