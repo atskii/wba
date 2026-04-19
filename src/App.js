@@ -1245,7 +1245,7 @@ function DashboardView({ tasks, moods, selectedDate, onChangeDate, onToggle, onO
 // ═══════════════════════════════════════════════════
 //  CALENDAR VIEW (ZADANIA ZOSTAJĄ NA MIEJSCU PO PRAWEJ)
 // ═══════════════════════════════════════════════════
-function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, onEditTask, loading }) {
+function CalendarView({ tasks, selectedDate, onChangeDate, onToggle, onDelete, onFocusTask, onEditTask, loading }) {
   const H = { fontFamily: "'Lora', serif" };
   const [search, setSearch] = useState("");
 
@@ -1302,10 +1302,20 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
     <div className="flex h-screen bg-white">
       {/* LEWA KOLUMNA: Oś czasu */}
       <div className="flex-1 overflow-y-auto p-8 border-r border-[#E8DDD0] pb-24">
-        <header className="mb-10">
-          <h1 style={H} className="text-3xl font-bold text-[#1A2F22] capitalize">
-            {selectedDate.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </h1>
+        <header className="mb-10 flex flex-col gap-1">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <button onClick={() => onChangeDate(-1)} className="p-2 hover:bg-[#F5EFE6] rounded-full transition-all active:scale-95 text-[#5A7368] hover:text-[#1E5C36]">
+                <ChevronLeft size={20} />
+              </button>
+              <button onClick={() => onChangeDate(1)} className="p-2 hover:bg-[#F5EFE6] rounded-full transition-all active:scale-95 text-[#5A7368] hover:text-[#1E5C36]">
+                <ChevronRight size={20} />
+              </button>
+            </div>
+            <h1 style={H} className="text-3xl font-bold text-[#1A2F22] capitalize">
+              {selectedDate.toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </h1>
+          </div>
           <p className="text-[#5A7368] text-sm mt-1">Siatka godzinowa: Twoje zablokowane terminy i ostateczne deadline'y.</p>
         </header>
 
@@ -1338,14 +1348,15 @@ function CalendarView({ tasks, selectedDate, onToggle, onDelete, onFocusTask, on
                     return (
                       <div
                         key={t.id}
+                        onClick={() => onEditTask(t)}
                         style={{
                           height: `${heightRem}rem`,
                           minHeight: '3.5rem',
                           zIndex: 10 + index,
-                          width: `calc(100% - ${index * 1.5}rem)`,
-                          left: `${index * 1.5}rem`
+                          width: `calc(${100 / tasksInThisHour.length}% - 4px)`,
+                          left: `calc(${(100 / tasksInThisHour.length) * index}% + 2px)`
                         }}
-                        className={`absolute top-0 border-l-4 rounded-xl p-3 shadow-md hover:shadow-lg transition-all overflow-hidden ${isDeadlineBlock ? 'bg-red-50/95 border-red-400' : 'bg-[#E8F4ED]/95 border-[#2D9E6B]'}`}
+                        className={`absolute top-0 border-l-4 rounded-xl p-3 shadow-md hover:shadow-lg transition-all overflow-hidden cursor-pointer ${isDeadlineBlock ? 'bg-red-50/95 border-red-400' : 'bg-[#E8F4ED]/95 border-[#2D9E6B]'}`}
                       >
                         <div className="flex justify-between items-start mb-1">
                           <p className={`text-sm font-bold truncate ${isDeadlineBlock ? 'text-red-700' : 'text-[#1E5C36]'}`}>{t.title}</p>
@@ -2157,6 +2168,7 @@ export default function App() {
                 <CalendarView
                   tasks={tasks}
                   selectedDate={selectedDate}
+                  onChangeDate={(offset) => setSelectedDate(d => { const nd = new Date(d); nd.setDate(d.getDate() + offset); return nd; })}
                   onToggle={toggleTask}
                   onDelete={deleteTask}
                   onFocusTask={setFocusedTask}
