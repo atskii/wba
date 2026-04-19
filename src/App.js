@@ -522,7 +522,7 @@ function Onboarding({ onComplete }) {
 // ═══════════════════════════════════════════════════
 //  APP: SIDEBAR / LAYOUT
 // ═══════════════════════════════════════════════════
-function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selectedDate, setSelectedDate }) {
+function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selectedDate, setSelectedDate, todayDate }) {
   const H = { fontFamily: "'Lora', serif" };
 
   // Logika generowania dni w mini-kalendarzu
@@ -595,7 +595,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
 
             {/* Następnie mapujemy właściwe dni */}
             {daysInMonth.map((date, idx) => {
-              const isToday = date.toDateString() === new Date().toDateString();
+              const isToday = date.toDateString() === todayDate.toDateString();
               const isSelected = date.toDateString() === selectedDate.toDateString();
               return (
                 <button
@@ -1058,7 +1058,6 @@ function StreakPlant({ tasks }) {
     </div>
   );
 }
-
 
 
 
@@ -1533,7 +1532,7 @@ function CalendarView({ tasks, selectedDate, onChangeDate, onToggle, onDelete, o
 // ═══════════════════════════════════════════════════
 //  MOOD VIEW (ZAAWANSOWANA ANALITYKA NASTROJU)
 // ═══════════════════════════════════════════════════
-function MoodView({ moods, onOpenModal, onEditMood }) {
+function MoodView({ moods, onOpenModal, onEditMood, todayDate }) {
   const H = { fontFamily: "'Lora', serif" };
   const [filter, setFilter] = useState("Kwartał");
   const [hovered, setHovered] = useState(null);
@@ -1545,7 +1544,7 @@ function MoodView({ moods, onOpenModal, onEditMood }) {
   if (filter === "Tydzień") daysToShow = 7;
   if (filter === "Miesiąc") daysToShow = 30;
 
-  const today = new Date();
+  const today = new Date(todayDate || new Date());
   today.setHours(0, 0, 0, 0);
 
   const width = 1200;
@@ -1835,6 +1834,13 @@ export default function App() {
   const { ts, add, rm } = useToasts();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  const [offsetDays, setOffsetDays] = useState(0);
+  const getNow = useCallback(() => {
+    const d = new Date();
+    if (offsetDays !== 0) d.setDate(d.getDate() + offsetDays);
+    return d;
+  }, [offsetDays]);
+
   const [hasPromptedToday, setHasPromptedToday] = useState(false);
   const [hasPrompted5h, setHasPrompted5h] = useState(false);
 
@@ -1891,14 +1897,51 @@ export default function App() {
         setTasks([]);
         add('Usunięto wszystkie zadania (Shift+Y)');
       }
+
+      // Shift+C → Wyczyść historię nastrojów
+      if (e.shiftKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        setMoods([]);
+        add('Historia nastrojów wyczyszczona (Test)', 'info');
+      }
+
+      // Shift+V → Wygeneruj sztuczną historię
+      if (e.shiftKey && e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        const fakeMoods = [];
+        for(let i=14; i>=0; i--) {
+           const d = getNow();
+           d.setDate(d.getDate() - i);
+           const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+           fakeMoods.push({ id: Date.now() + i, d: ds, v: Math.floor(Math.random() * 5) + 1, note: "Testowa notatka" });
+        }
+        setMoods(fakeMoods);
+        add('Sztuczna historia nastrojów wygenerowana (Test)', 'success');
+      }
+
+      // Shift+B → Dzień do tyłu
+      if (e.shiftKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setOffsetDays(prev => prev - 1);
+        setSelectedDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
+        add('Aplikacja: Przesunięto w czasie o 1 dzień wstecz (Test)', 'info');
+      }
+
+      // Shift+N → Dzień do przodu
+      if (e.shiftKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        setOffsetDays(prev => prev + 1);
+        setSelectedDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; });
+        add('Aplikacja: Przesunięto w czasie o 1 dzień do przodu (Test)', 'info');
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [view, setTasks, add]);
+  }, [view, setTasks, setMoods, add, getNow]);
 
   useEffect(() => {
-    const nowLocal = new Date();
+    const nowLocal = getNow();
     const todayStr = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
     const moodToday = moods.find(m => m.d === todayStr);
 
@@ -1921,7 +1964,7 @@ export default function App() {
       setShowMoodModal(true);
       setHasPrompted5h(true);
     }
-  }, [tasks, moods, hasPromptedToday, hasPrompted5h]);
+  }, [tasks, moods, hasPromptedToday, hasPrompted5h, getNow, add]);
 
   const handleNav = (tab) => {
     // Usunęliśmy stąd blokadę, która otwierała Modal zamiast widoku
@@ -1931,7 +1974,7 @@ export default function App() {
   };
 
   const sortSmartQueue = (tasksList) => {
-    const nowLocal = new Date();
+    const nowLocal = getNow();
     const todayStr = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
     const lastMood = moods.length > 0 ? moods[moods.length - 1].v : 2;
 
@@ -2112,7 +2155,7 @@ export default function App() {
   const addMood = (m) => {
     setMoods(prev => {
       // Pobieramy dzisiejszą datę w formacie YYYY-MM-DD (lokalnie, bez UTC!)
-      const nowL = new Date();
+      const nowL = getNow();
       const todayStr = `${nowL.getFullYear()}-${String(nowL.getMonth() + 1).padStart(2, '0')}-${String(nowL.getDate()).padStart(2, '0')}`;
 
       // Szukamy, czy dzisiaj już wprowadzono nastrój
@@ -2125,7 +2168,7 @@ export default function App() {
         return newMoods;
       } else {
         // Jeśli nie -> dodajemy nową kropkę
-        return [...prev, m];
+        return [...prev, { ...m, d: todayStr }];
       }
     });
     add("Twój nastrój został zapisany.");
@@ -2157,6 +2200,7 @@ export default function App() {
             setCollapsed={setSidebarCollapsed}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
+            todayDate={getNow()}
           />
           <main className="flex-1 overflow-y-auto relative bg-[#FAFAFA]">
 
@@ -2165,7 +2209,7 @@ export default function App() {
               <div className="flex items-center space-x-6">
                 <span className="text-3xl font-bold text-[#164229] flex items-baseline gap-2">
                   <span>Dzień dobry {user?.name || "Natalia"},</span>
-                  <span className="capitalize">{new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                  <span className="capitalize">{getNow().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                 </span>
               </div>
 
@@ -2275,6 +2319,7 @@ export default function App() {
                   moods={moods}
                   onOpenModal={() => setShowMoodModal(true)}
                   onEditMood={handleEditMood}
+                  todayDate={getNow()}
                 />
               )}
               {activeTab === "warning" && <WarningView loading={isLoading} user={user} />}
