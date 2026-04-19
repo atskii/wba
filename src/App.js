@@ -1150,51 +1150,131 @@ function DashboardView({ tasks, moods, selectedDate, onChangeDate, onToggle, onO
               </div>
             ))}
 
-            {timelineWithGaps.map(t => {
-              const topRem = minsToRem(t.sMins - (timelineStart * 60));
-              const durMins = t.duration ? parseInt(t.duration) : 45;
-              const heightRem = minsToRem(Math.max(durMins, 45));
+            <div className="absolute top-0 bottom-0 left-20 right-0">
+              {(() => {
+                const renderItems = timelineWithGaps.map(t => {
+                  const topRem = minsToRem(t.sMins - (timelineStart * 60));
+                  const durMins = t.duration ? parseInt(t.duration) : 45;
+                  const heightRem = minsToRem(Math.max(durMins, 15));
+                  const actualHeight = t.isVisualGap ? minsToRem(t.eMins - t.sMins) : Math.max(heightRem, 2.2);
+                  return { ...t, topRem, heightRem, actualHeight, durMins };
+                });
 
-              if (t.isVisualGap) {
-                return (
-                  <div key={t.id} className="absolute left-20 right-0 flex items-center justify-center z-10 pointer-events-none" style={{ top: `${topRem}rem`, height: `${minsToRem(t.eMins - t.sMins)}rem` }}>
-                    <div className="w-full border-t-2 border-dashed border-[#2D9E6B]/30 flex items-center justify-center relative">
-                      <div className="absolute bg-[#FAFAFA] px-4 py-1.5 rounded-full border border-[#2D9E6B]/20 flex items-center gap-2 shadow-sm">
-                        <Leaf size={12} className="text-[#2D9E6B]" />
-                        <span className="text-[9px] font-black uppercase tracking-widest text-[#5A7368]">{t.title} ({t.duration})</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
+                const tasksOnly = renderItems.filter(t => !t.isVisualGap);
+                let currentGroup = [];
+                let maxEnd = 0;
+                const groups = [];
 
-              return (
-                <div key={t.id} onClick={() => onEditTask(t)} className={`absolute left-20 right-0 rounded-2xl p-5 shadow-sm border z-20 hover:z-50 transition-all cursor-pointer group flex flex-col justify-center ${t.done ? 'bg-gray-50 border-gray-200 opacity-60 grayscale hover:opacity-80' : 'bg-white border-[#E8DDD0] hover:shadow-xl hover:border-[#2D9E6B] hover:bg-[#FBFFF1] hover:-translate-y-0.5 active:scale-[0.99]'}`} style={{ top: `${topRem + 0.2}rem`, height: `${heightRem - 0.4}rem`, minHeight: '5.5rem' }}>
-                  <div className="flex justify-between items-start h-full relative">
-                    <div className="flex gap-4">
-                      <div className={`mt-1 flex-shrink-0 ${t.done ? 'text-gray-400' : t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                        <Star size={22} fill="currentColor" strokeWidth={1} />
+                tasksOnly.forEach(t => {
+                  if (currentGroup.length === 0) {
+                    currentGroup.push(t);
+                    maxEnd = t.topRem + t.actualHeight;
+                  } else {
+                    if (t.topRem < maxEnd - 0.2) {
+                      currentGroup.push(t);
+                      maxEnd = Math.max(maxEnd, t.topRem + t.actualHeight);
+                    } else {
+                      groups.push(currentGroup);
+                      currentGroup = [t];
+                      maxEnd = t.topRem + t.actualHeight;
+                    }
+                  }
+                });
+                if (currentGroup.length > 0) groups.push(currentGroup);
+
+                groups.forEach(group => {
+                  const cols = [];
+                  group.forEach(t => {
+                    let placed = false;
+                    for (let i = 0; i < cols.length; i++) {
+                      const lastInCol = cols[i][cols[i].length - 1];
+                      if (t.topRem >= lastInCol.topRem + lastInCol.actualHeight - 0.2) {
+                        cols[i].push(t);
+                        t.colIndex = i;
+                        placed = true;
+                        break;
+                      }
+                    }
+                    if (!placed) {
+                      t.colIndex = cols.length;
+                      cols.push([t]);
+                    }
+                  });
+                  const colCount = cols.length;
+                  group.forEach(t => {
+                    t.colCount = colCount;
+                  });
+                });
+
+                return renderItems.map(t => {
+                  if (t.isVisualGap) {
+                    return (
+                      <div key={t.id} className="absolute left-0 right-0 flex items-center justify-center z-10 pointer-events-none" style={{ top: `${t.topRem}rem`, height: `${t.actualHeight}rem` }}>
+                        <div className="w-full border-t-2 border-dashed border-[#2D9E6B]/30 flex items-center justify-center relative">
+                          <div className="absolute bg-[#FAFAFA] px-4 py-1.5 rounded-full border border-[#2D9E6B]/20 flex items-center gap-2 shadow-sm">
+                            <Leaf size={12} className="text-[#2D9E6B]" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[#5A7368]">{t.title} ({t.duration})</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className={`text-base font-bold transition-colors pr-32 ${t.done ? 'line-through text-gray-500' : 'text-[#1A2F22] group-hover:text-[#1E5C36]'}`}>{t.title}</h4>
-                        <p className={`text-xs font-bold mt-1 ${t.done ? 'text-gray-400' : 'text-[#5A7368]'}`}>{formatTime(t.sMins)} — {formatTime(t.sMins + durMins)}</p>
+                    );
+                  }
+
+                  const widthPct = 100 / t.colCount;
+                  const leftOffset = t.colIndex * widthPct;
+
+                  const isSmall = t.durMins <= 25;
+                  const isMedium = t.durMins > 25 && t.durMins <= 45;
+
+                  const pClass = isSmall ? 'p-2 px-3' : isMedium ? 'p-3' : 'p-5';
+                  const minH = isSmall ? '2.2rem' : isMedium ? '3.5rem' : '5.5rem';
+                  const titleSize = isSmall ? 'text-xs' : isMedium ? 'text-sm' : 'text-base';
+                  const starSize = isSmall ? 14 : isMedium ? 18 : 22;
+                  const btnClass = isSmall ? 'w-6 h-6' : isMedium ? 'w-7 h-7' : 'w-8 h-8';
+                  const btnIconSize = isSmall ? 10 : isMedium ? 12 : 14;
+                  const showTime = !isSmall;
+                  
+                  const showLockInFlex = isSmall || isMedium;
+                  const lockFlexClass = isSmall ? 'w-[16px] h-[16px]' : 'w-[18px] h-[18px]';
+                  const lockIconSize = isSmall ? 8 : isMedium ? 10 : 12;
+                  const actionsPosClass = (isSmall || isMedium) ? 'top-1/2 -translate-y-1/2 right-0' : 'top-0 right-0';
+
+                  return (
+                    <div key={t.id} onClick={() => onEditTask(t)} className={`absolute rounded-2xl ${pClass} shadow-sm border z-20 hover:z-50 transition-all cursor-pointer group flex flex-col justify-center ${t.done ? 'bg-gray-50 border-gray-200 opacity-60 grayscale hover:opacity-80' : 'bg-white border-[#E8DDD0] hover:shadow-xl hover:border-[#2D9E6B] hover:bg-[#FBFFF1] hover:-translate-y-0.5 active:scale-[0.99]'}`} style={{ top: `${t.topRem + 0.2}rem`, height: `${t.heightRem - 0.4}rem`, minHeight: minH, width: `calc(${widthPct}% - 4px)`, left: `calc(${leftOffset}% + 2px)` }}>
+                      <div className={`flex justify-between h-full relative ${(isSmall || isMedium) ? 'items-center' : 'items-start'}`}>
+                        <div className="flex gap-2 sm:gap-4 min-w-0 flex-1">
+                          <div className={`${isSmall ? 'mt-0' : 'mt-1'} flex-shrink-0 flex items-center gap-1.5 ${t.done ? 'text-gray-400' : t.p === 'wysoki' ? 'text-red-400' : t.p === 'sredni' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                            <Star size={starSize} fill="currentColor" strokeWidth={1} />
+                            {t.isLocked && showLockInFlex && (
+                              <div className={`flex items-center justify-center rounded border border-[#E8DDD0] bg-white shadow-sm z-30 ${lockFlexClass} ${t.done ? 'opacity-50' : ''}`}>
+                                <Lock size={lockIconSize} strokeWidth={2.5} className="text-[#5A7368]" />
+                              </div>
+                            )}
+                          </div>
+                          <div className={`min-w-0 flex-1 ${isSmall ? 'pr-20' : 'pr-32'}`}>
+                            <h4 className={`${titleSize} font-bold transition-colors truncate ${t.done ? 'line-through text-gray-500' : 'text-[#1A2F22] group-hover:text-[#1E5C36]'}`} title={t.title}>{t.title}</h4>
+                            {showTime && (
+                              <p className={`text-xs font-bold mt-1 ${t.done ? 'text-gray-400' : 'text-[#5A7368]'}`}>{formatTime(t.sMins)} — {formatTime(t.sMins + t.durMins)}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className={`absolute ${actionsPosClass} flex items-center gap-1 sm:gap-1.5 transition-all z-30 ${t.done ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                          {!t.done && <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} className={`${btnClass} rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all`}><Play size={btnIconSize} className="ml-0.5" /></button>}
+                          {!t.isLocked && !t.done && (
+                            <button onClick={(e) => { e.stopPropagation(); onReturnToBacklog(t.id); }} title="Cofnij do backlogu" className={`${btnClass} rounded-full bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all`}>
+                              <RotateCcw size={btnIconSize} />
+                            </button>
+                          )}
+                          <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className={`${btnClass} rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all`}><Trash2 size={btnIconSize} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} className={`${btnClass} rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}><Check size={btnIconSize} /></button>
+                        </div>
+                        {t.isLocked && !showLockInFlex && <div className={`absolute bottom-0 left-0 flex items-center justify-center rounded border border-[#E8DDD0] bg-white shadow-sm z-30 w-[22px] h-[22px] ${t.done ? 'opacity-50' : ''}`}><Lock size={12} strokeWidth={2.5} className="text-[#5A7368]" /></div>}
                       </div>
                     </div>
-                    <div className={`absolute top-0 right-0 flex items-center gap-1.5 transition-all z-30 ${t.done ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                      {!t.done && <button onClick={(e) => { e.stopPropagation(); onFocusTask(t); }} className="w-8 h-8 rounded-full bg-[#E8F4ED] text-[#1E5C36] hover:bg-[#1E5C36] hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Play size={14} className="ml-0.5" /></button>}
-                      {!t.isLocked && !t.done && (
-                        <button onClick={(e) => { e.stopPropagation(); onReturnToBacklog(t.id); }} title="Cofnij do backlogu" className="w-8 h-8 rounded-full bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all">
-                          <RotateCcw size={14} />
-                        </button>
-                      )}
-                      <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-sm hover:scale-110 transition-all"><Trash2 size={14} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); onToggle(t.id); }} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-all ${t.done ? 'bg-[#5A7368] text-white' : 'bg-[#E8F4ED] text-[#1E5C36] border border-[#2D9E6B]'}`}><Check size={14} /></button>
-                    </div>
-                    {t.isLocked && <div className={`absolute bottom-0 left-0 flex items-center justify-center w-[22px] h-[22px] rounded border border-[#E8DDD0] bg-white shadow-sm z-30 ${t.done ? 'opacity-50' : ''}`}><Lock size={12} strokeWidth={2.5} className="text-[#5A7368]" /></div>}
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                });
+              })()}
+            </div>
           </div>
         </div>
         <div className="xl:col-span-4 space-y-6 pt-16">
@@ -1989,18 +2069,31 @@ export default function App() {
   };
 
   const saveTask = (t) => {
+    let taskToSave = { ...t };
+    const durMatch = taskToSave.duration ? taskToSave.duration.match(/(\d+)/) : null;
+    let durationAlert = false;
+    
+    if (durMatch && parseInt(durMatch[1]) < 15) {
+      taskToSave.duration = "15 min";
+      durationAlert = true;
+    }
+
     setTasks(prev => {
       let updatedTasks = [];
-      if (t.id) {
-        updatedTasks = prev.map(task => task.id === t.id ? { ...task, ...t } : task);
+      if (taskToSave.id) {
+        updatedTasks = prev.map(task => task.id === taskToSave.id ? { ...task, ...taskToSave } : task);
       } else {
-        updatedTasks = [{ ...t, id: Date.now(), done: false }, ...prev];
+        updatedTasks = [{ ...taskToSave, id: Date.now(), done: false }, ...prev];
       }
       return sortSmartQueue(updatedTasks);
     });
 
-    if (t.id) add("Zmiany zostały zapisane.");
-    else add("Zadanie dodane pomyślnie!");
+    if (durationAlert) {
+      add("Czas minimalny na zadanie to 15 minut. Został on wydłużony do 15.", "warn");
+    } else {
+      if (t.id) add("Zmiany zostały zapisane.");
+      else add("Zadanie dodane pomyślnie!");
+    }
 
     setIsTaskModalOpen(false);
     setEditingTask(null);
