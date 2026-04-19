@@ -522,7 +522,7 @@ function Onboarding({ onComplete }) {
 // ═══════════════════════════════════════════════════
 //  APP: SIDEBAR / LAYOUT
 // ═══════════════════════════════════════════════════
-function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selectedDate, setSelectedDate, todayDate, activeAlert }) {
+function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selectedDate, setSelectedDate, todayDate, activeAlert, onDismissAlert }) {
   const H = { fontFamily: "'Lora', serif" };
 
   // Logika generowania dni w mini-kalendarzu
@@ -591,7 +591,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
                     <p className="text-[#1A432E] text-xs leading-relaxed mb-4">
                       {activeAlert.text}
                     </p>
-                    <button onClick={() => onNav("warning")} className="text-[#1A432E] font-bold text-xs underline decoration-2 underline-offset-4 hover:opacity-80 transition-opacity text-left">
+                    <button onClick={() => { onDismissAlert(); onNav("warning"); }} className="text-[#1A432E] font-bold text-xs underline decoration-2 underline-offset-4 hover:opacity-80 transition-opacity text-left">
                       {activeAlert.btnText}
                     </button>
                   </div>
@@ -1944,6 +1944,67 @@ export const analyzeMoodAlerts = (moods, todayDate) => {
 };
 
 // ═══════════════════════════════════════════════════
+//  DEBUG MODAL (SKRÓT: SHIFT+D)
+// ═══════════════════════════════════════════════════
+function DebugModal({ onClose, onTriggerScenario }) {
+  const scenarios = [
+    {
+      id: 1,
+      name: "1. Ostre wyczerpanie emocjonalne",
+      desc: "Symuluje 3 dni z rzędu z krytycznie niskim nastrojem (np. 😫). Średnia z 3 dni spada poniżej 2.0."
+    },
+    {
+      id: 2,
+      name: "2. Spłaszczenie emocjonalne",
+      desc: "Symuluje 7 dni monotonii, gdzie nastrój to ciągłe 😐. Bardzo niska wariancja i brak lepszych dni."
+    },
+    {
+      id: 3,
+      name: "3. Brak regeneracji po weekendzie",
+      desc: "Cofa czas do poniedziałku i ustawia nastrój poniedziałkowy gorszy/równy nastrojowi z piątku."
+    },
+    {
+      id: 4,
+      name: "4. Inercja emocjonalna",
+      desc: "Symuluje 5 dni tkwiących w martwym punkcie (wahania między 😟 a 😐, brak dobrych dni)."
+    }
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#1A2F22]/60 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg border border-white/20 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-bold text-[#1A2F22] text-xl">Symulator scenariuszy ostrzegawczych</h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all">
+            <X size={20} className="text-[#9FB5AD]" />
+          </button>
+        </div>
+        <p className="text-sm text-[#5A7368] mb-6">
+          Kliknij przycisk obok scenariusza, aby go zasymulować. Zmodyfikuje to Twoją testową historię nastrojów.
+        </p>
+
+        <div className="space-y-4">
+          {scenarios.map(s => (
+            <div key={s.id} className="flex flex-col gap-2 p-4 bg-[#F5EFE6] rounded-xl border border-[#E8DDD0]">
+              <div className="flex justify-between items-start">
+                <h4 className="font-bold text-[#1E5C36]">{s.name}</h4>
+                <button 
+                  onClick={() => onTriggerScenario(s.id)} 
+                  className="px-4 py-2 bg-[#2D9E6B] text-white text-xs font-bold rounded-lg hover:bg-[#1E5C36] transition-colors whitespace-nowrap ml-4 shadow-sm"
+                >
+                  Odpal ten alert
+                </button>
+              </div>
+              <p className="text-xs text-[#5A7368] leading-relaxed pr-24">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════
 //  MAIN APP ROUTER & LOGIC
 // ═══════════════════════════════════════════════════
 export default function App() {
@@ -1976,7 +2037,59 @@ export default function App() {
   const [hasPromptedToday, setHasPromptedToday] = useState(false);
   const [hasPrompted5h, setHasPrompted5h] = useState(false);
 
-  const activeAlert = useMemo(() => analyzeMoodAlerts(moods, getNow()), [moods, getNow]);
+  const [dismissedAlertKey, setDismissedAlertKey] = useState(null);
+  const rawActiveAlert = useMemo(() => analyzeMoodAlerts(moods, getNow()), [moods, getNow]);
+  const currentAlertKey = rawActiveAlert ? `${rawActiveAlert.id}-${getNow().toDateString()}` : null;
+  const activeAlert = (rawActiveAlert && currentAlertKey !== dismissedAlertKey) ? rawActiveAlert : null;
+
+  const [showDebugModal, setShowDebugModal] = useState(false);
+
+  const handleTriggerScenario = (scenarioId) => {
+    setDismissedAlertKey(null);
+    const nowL = new Date();
+    nowL.setHours(0, 0, 0, 0);
+    setOffsetDays(0);
+
+    const generateFakeMood = (daysAgo, v) => {
+      const d = new Date(nowL);
+      d.setDate(d.getDate() - daysAgo);
+      return {
+        id: Date.now() + Math.random(),
+        d: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+        v: v,
+        note: "Symulacja"
+      };
+    };
+
+    setMoods(prev => {
+      let newMoods = [];
+      if (scenarioId === 1) {
+        newMoods.push(generateFakeMood(0, 0));
+        newMoods.push(generateFakeMood(1, 0));
+        newMoods.push(generateFakeMood(2, 1));
+      } else if (scenarioId === 2) {
+        for(let i=0; i<7; i++) newMoods.push(generateFakeMood(i, 3));
+      } else if (scenarioId === 3) {
+        const day = nowL.getDay();
+        let diffToMonday = day === 0 ? -6 : 1 - day;
+        if (diffToMonday > 0) diffToMonday -= 7;
+        setOffsetDays(diffToMonday);
+        const monDaysAgo = Math.abs(diffToMonday);
+        newMoods.push(generateFakeMood(monDaysAgo, 2));
+        newMoods.push(generateFakeMood(monDaysAgo + 3, 4));
+      } else if (scenarioId === 4) {
+        newMoods.push(generateFakeMood(0, 2));
+        newMoods.push(generateFakeMood(1, 3));
+        newMoods.push(generateFakeMood(2, 2));
+        newMoods.push(generateFakeMood(3, 3));
+        newMoods.push(generateFakeMood(4, 2));
+      }
+      return newMoods;
+    });
+    
+    setShowDebugModal(false);
+    add("Zasymulowano scenariusz " + scenarioId);
+  };
 
   useEffect(() => {
     if (view === "landing" && user) setView("app");
@@ -1988,6 +2101,13 @@ export default function App() {
       // Ignoruj, gdy użytkownik pisze w polu tekstowym lub nie jest w widoku apki
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
       if (view !== 'app') return;
+
+      // Skrót SHIFT + D (Debug Modal)
+      if (e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        setShowDebugModal(true);
+        return;
+      }
 
       // Shift+T → Dodaj 20 losowych zadań z puli INIT_TASKS (bez duplikatów)
       if (e.shiftKey && e.key === 'T') {
@@ -2336,6 +2456,7 @@ export default function App() {
             setSelectedDate={setSelectedDate}
             todayDate={getNow()}
             activeAlert={activeAlert}
+            onDismissAlert={() => setDismissedAlertKey(currentAlertKey)}
           />
           <main className="flex-1 overflow-y-auto relative bg-[#FAFAFA]">
 
@@ -2470,6 +2591,7 @@ export default function App() {
           )}
 
           {showMoodModal && <MoodModal onClose={() => setShowMoodModal(false)} onAdd={addMood} />}
+          {showDebugModal && <DebugModal onClose={() => setShowDebugModal(false)} onTriggerScenario={handleTriggerScenario} />}
         </>
       )}
     </div>
