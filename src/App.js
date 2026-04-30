@@ -1158,13 +1158,15 @@ function StreakPlant({ tasks }) {
 // ═══════════════════════════════════════════════════
 //  DASHBOARD VIEW (ZAMROŻONY PLAN Z GUZIKIEM GENERUJ)
 // ═══════════════════════════════════════════════════
-function DashboardView({ tasks, moods, selectedDate, onChangeDate, onToggle, onOpenTaskModal, onEditTask, onDelete, onReturnToBacklog, onAlert, onFocusTask, loading, onGeneratePlan }) {
+function DashboardView({ tasks, moods, selectedDate, onChangeDate, onToggle, onOpenTaskModal, onEditTask, onDelete, onReturnToBacklog, onAlert, onFocusTask, loading, onGeneratePlan, userPrefs }) {
   const H = { fontFamily: "'Lora', serif" };
   const [showBacklog, setShowBacklog] = useState(false);
 
   if (loading) return <SkeletonScreen />;
 
-  const timelineStart = 6;
+  // Godzina startu z onboardingu (domyślnie 6)
+  const parsedStart = userPrefs?.startTime ? userPrefs.startTime.split(':').map(Number) : [6, 0];
+  const timelineStart = parsedStart[0] || 6;
   const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   const flexScheduled = tasks.filter(t => !t.isLocked && t.sMins !== null && t.sMins !== undefined && t.pDate === dateStr);
@@ -1191,13 +1193,20 @@ function DashboardView({ tasks, moods, selectedDate, onChangeDate, onToggle, onO
       const nextStart = scheduled[i + 1].sMins;
       const gap = nextStart - currEnd;
       if (gap >= 15) {
-        timelineWithGaps.push({ id: `gap-${i}`, isVisualGap: true, title: "Czas na regenerację", duration: `${gap} min`, sMins: currEnd, eMins: nextStart });
+        // Losowa propozycja przerwy z odpowiedzi z pytania 3 onboardingu
+        const breakPicks = userPrefs?.picks || [];
+        const breakTitle = breakPicks.length > 0
+          ? breakPicks[Math.floor(Math.random() * breakPicks.length)]
+          : "Czas na regenerację";
+        timelineWithGaps.push({ id: `gap-${i}`, isVisualGap: true, title: breakTitle, duration: `${gap} min`, sMins: currEnd, eMins: nextStart });
       }
     }
   });
 
-  const lastTaskMins = scheduled.length > 0 ? scheduled[scheduled.length - 1].eMins : (16 * 60);
-  const timelineEndHour = Math.max(18, Math.ceil(lastTaskMins / 60) + 1);
+  // Długość dnia pracy z onboardingu (domyślnie 12h od startu)
+  const workHours = userPrefs?.hours || 12;
+  const lastTaskMins = scheduled.length > 0 ? scheduled[scheduled.length - 1].eMins : ((timelineStart + workHours) * 60);
+  const timelineEndHour = Math.max(timelineStart + workHours, Math.ceil(lastTaskMins / 60) + 1);
   const hours = Array.from({ length: timelineEndHour - timelineStart + 1 }, (_, i) => timelineStart + i);
   const minsToRem = (mins) => (mins / 60) * 8;
   const formatTime = (mins) => `${Math.floor(mins / 60)}:${(mins % 60).toString().padStart(2, '0')}`;
@@ -2377,8 +2386,11 @@ export default function App() {
 
   // --- NOWA LOGIKA: RĘCZNE GENEROWANIE PLANU ---
   const generatePlan = () => {
-    const timelineStart = 6;
-    const dayLimitMins = 21 * 60;
+    // Godzina startu i długość dnia z preferencji onboardingu
+    const parsedStart = user?.prefs?.startTime ? user.prefs.startTime.split(':').map(Number) : [6, 0];
+    const timelineStart = parsedStart[0] || 6;
+    const workHours = user?.prefs?.hours || 15;
+    const dayLimitMins = (timelineStart + workHours) * 60;
     const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
     setTasks(prevTasks => {
@@ -2685,7 +2697,8 @@ export default function App() {
                     handleNav("warning");
                   }}
                   loading={isLoading}
-                  onGeneratePlan={generatePlan} /* <-- TO OŻYWIA GUZIK! */
+                  onGeneratePlan={generatePlan}
+                  userPrefs={user?.prefs}
                 />
               )}
               {activeTab === "calendar" && (
