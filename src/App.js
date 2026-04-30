@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Home, Calendar, Smile, AlertTriangle, Plus, Search, Check, X,
-  ChevronDown, ChevronLeft, ChevronRight, Phone, Clock, ArrowRight,
+  ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Phone, Clock, ArrowRight,
   BookOpen, Brain, RefreshCw, Eye, EyeOff, LogOut, ExternalLink,
   Filter, Flame, Menu, Bell, Settings, TrendingUp, TrendingDown,
   Minus, MessageSquare, Leaf, Star, AlertCircle, CheckCircle,
@@ -463,13 +463,48 @@ function AuthView({ mode, onAuth, onSwitch, onBack }) {
 function Onboarding({ onComplete }) {
   const [step, setStep] = useState(0);
   const [hours, setHours] = useState(8);
-  const [focus, setFocus] = useState("Rano");
+  
+  const [startHour, setStartHour] = useState("08");
+  const [startMinute, setStartMinute] = useState("00");
+  
   const [picks, setPicks] = useState([]);
   const S = { fontFamily: "'DM Sans',sans-serif" };
   const H = { fontFamily: "'Lora',serif" };
   const OPTS = ["Wyjście na słońce", "Kilka minut przerwy", "Dobra kawa", "Krótki spacer", "Rozmowa z bliskim", "Mała przekąska", "Przerwa od pracy", "Muzyka", "Zmiana otoczenia"];
 
   const toggle = b => setPicks(p => p.includes(b) ? p.filter(x => x !== b) : [...p, b]);
+
+  const handleHourChange = (delta) => {
+    let newH = parseInt(startHour, 10) + delta;
+    if (isNaN(newH)) newH = 8 + delta;
+    if (newH < 0) newH = 23;
+    if (newH > 23) newH = 0;
+    setStartHour(String(newH).padStart(2, "0"));
+  };
+
+  const handleMinuteChange = (delta) => {
+    let newM = parseInt(startMinute, 10) + delta;
+    if (isNaN(newM)) newM = delta;
+    if (newM < 0) newM = 59;
+    if (newM > 59) newM = 0;
+    setStartMinute(String(newM).padStart(2, "0"));
+  };
+
+  const handleHourInputBlur = () => {
+      let val = parseInt(startHour, 10);
+      if (isNaN(val)) val = 8;
+      if (val < 0) val = 0;
+      if (val > 23) val = 23;
+      setStartHour(String(val).padStart(2, "0"));
+  };
+
+  const handleMinuteInputBlur = () => {
+      let val = parseInt(startMinute, 10);
+      if (isNaN(val)) val = 0;
+      if (val < 0) val = 0;
+      if (val > 59) val = 59;
+      setStartMinute(String(val).padStart(2, "0"));
+  };
 
   return (
     <div style={S} className="min-h-screen bg-[#F5EFE6] flex flex-col">
@@ -492,10 +527,36 @@ function Onboarding({ onComplete }) {
           </>}
           {step === 1 && <>
             <h2 style={H} className="text-2xl font-bold text-center text-[#1A2F22] mb-2">Pytanie 2 z 3</h2>
-            <p className="text-center text-[#5A7368] mb-6 text-sm">W jakich godzinach zazwyczaj czujesz największy przypływ koncentracji?</p>
-            <select value={focus} onChange={e => setFocus(e.target.value)} className="w-full px-4 py-3 rounded-2xl border-2 border-[#E8DDD0] text-sm focus:outline-none focus:border-[#2D9E6B] bg-white appearance-none">
-              {["Rano (7:00–12:00)", "Środek dnia (11:00–16:00)", "Wieczór/Noc (po 17:00)", "To zależy / Różnie"].map(o => <option key={o}>{o}</option>)}
-            </select>
+            <p className="text-center text-[#5A7368] mb-4 text-sm">Od której godziny chcesz rozpoczynać swoje zadania?</p>
+            
+            <div className="flex items-center justify-center gap-4 my-6">
+              <div className="flex flex-col items-center">
+                <button onClick={() => handleHourChange(1)} className="p-2 text-[#5A7368] hover:text-[#1E5C36] transition-colors hover:-translate-y-1"><ChevronUp size={36} strokeWidth={2.5}/></button>
+                <input 
+                  type="text" 
+                  value={startHour} 
+                  onChange={e => setStartHour(e.target.value.replace(/\D/g, ''))} 
+                  onBlur={handleHourInputBlur}
+                  className="w-24 text-center text-6xl font-bold text-[#1A2F22] bg-transparent outline-none focus:text-[#2D9E6B] transition-colors"
+                  maxLength={2}
+                />
+                <button onClick={() => handleHourChange(-1)} className="p-2 text-[#5A7368] hover:text-[#1E5C36] transition-colors hover:translate-y-1"><ChevronDown size={36} strokeWidth={2.5}/></button>
+              </div>
+              <div className="text-5xl font-bold text-[#1A2F22] pb-2">:</div>
+              <div className="flex flex-col items-center">
+                <button onClick={() => handleMinuteChange(1)} className="p-2 text-[#5A7368] hover:text-[#1E5C36] transition-colors hover:-translate-y-1"><ChevronUp size={36} strokeWidth={2.5}/></button>
+                <input 
+                  type="text" 
+                  value={startMinute} 
+                  onChange={e => setStartMinute(e.target.value.replace(/\D/g, ''))} 
+                  onBlur={handleMinuteInputBlur}
+                  className="w-24 text-center text-6xl font-bold text-[#1A2F22] bg-transparent outline-none focus:text-[#2D9E6B] transition-colors"
+                  maxLength={2}
+                />
+                <button onClick={() => handleMinuteChange(-1)} className="p-2 text-[#5A7368] hover:text-[#1E5C36] transition-colors hover:translate-y-1"><ChevronDown size={36} strokeWidth={2.5}/></button>
+              </div>
+            </div>
+            <p className="text-center text-[11px] font-bold text-[#9FB5AD] uppercase tracking-widest mt-2">Możesz też wpisać godzinę z klawiatury</p>
           </>}
           {step === 2 && <>
             <h2 style={H} className="text-2xl font-bold text-center text-[#1A2F22] mb-1">Pytanie 3 z 3</h2>
@@ -509,8 +570,7 @@ function Onboarding({ onComplete }) {
               ))}
             </div>
           </>}
-          {/* TUTAJ ZMIANA: Przekazujemy tablicę "picks" do funkcji onComplete */}
-          <button onClick={() => { if (step < 2) setStep(s => s + 1); else onComplete(picks); }} className="w-full py-3.5 mt-6 bg-[#1E5C36] text-white rounded-2xl font-semibold hover:bg-[#164a2c] transition-all shadow-lg">
+          <button onClick={() => { if (step < 2) setStep(s => s + 1); else onComplete({ hours, startTime: `${startHour}:${startMinute}`, picks }); }} className="w-full py-3.5 mt-6 bg-[#1E5C36] text-white rounded-2xl font-semibold hover:bg-[#164a2c] transition-all shadow-lg">
             Kontynuuj
           </button>
         </div>
