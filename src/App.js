@@ -563,7 +563,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
         {navItems.map(n => {
           const isWarning = n.id === "warning";
           const hasAlert = isWarning && activeAlert !== null;
-          
+
           return (
             <div key={n.id} className="relative flex flex-col items-end">
               {hasAlert && !collapsed && (
@@ -571,19 +571,19 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
                   <span className="text-[9px] font-bold text-[#A51A1A] tracking-[0.15em] uppercase">AKCJA WYMAGANA</span>
                 </div>
               )}
-              
+
               <button onClick={() => onNav(n.id)} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all relative overflow-hidden ${active === n.id ? (hasAlert ? "bg-[#1e3a2b] text-white shadow-md" : "bg-[#1E5C36] text-white shadow-lg shadow-green-900/20") : (hasAlert ? "bg-[#1e3a2b] text-white shadow-md hover:bg-[#162c20]" : "text-[#5A7368] hover:bg-[#F5EFE6]")}`}>
-                
+
                 {hasAlert && (
                   <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#D32F2F]"></div>
                 )}
-                
+
                 <span className={`flex-shrink-0 ${hasAlert ? "animate-ring text-white" : ""}`}>
                   {n.icon}
                 </span>
                 {!collapsed && <span>{n.label}</span>}
               </button>
-              
+
               {hasAlert && !collapsed && (
                 <div className={`overflow-hidden transition-all duration-500 ease-in-out origin-top w-full max-h-96 opacity-100 mt-3`}>
                   <div className="bg-[#fceeb5] p-5 rounded-2xl shadow-inner mx-1 relative">
@@ -1266,7 +1266,7 @@ function DashboardView({ tasks, moods, selectedDate, onChangeDate, onToggle, onO
                   const btnClass = isSmall ? 'w-6 h-6' : isMedium ? 'w-7 h-7' : 'w-8 h-8';
                   const btnIconSize = isSmall ? 10 : isMedium ? 12 : 14;
                   const showTime = !isSmall;
-                  
+
                   const showLockInFlex = isSmall || isMedium;
                   const lockFlexClass = isSmall ? 'w-[16px] h-[16px]' : 'w-[18px] h-[18px]';
                   const lockIconSize = isSmall ? 8 : isMedium ? 10 : 12;
@@ -1946,7 +1946,16 @@ export const analyzeMoodAlerts = (moods, todayDate) => {
 // ═══════════════════════════════════════════════════
 //  DEBUG MODAL (SKRÓT: SHIFT+D)
 // ═══════════════════════════════════════════════════
-function DebugModal({ onClose, onTriggerScenario }) {
+function DebugModal({ onClose, actions }) {
+  const [activeTab, setActiveTab] = useState("scenarios");
+
+  const tabs = [
+    { id: "scenarios", label: "Ostrzeżenia" },
+    { id: "tasks", label: "Zadania" },
+    { id: "moods", label: "Nastroje" },
+    { id: "time", label: "Czas" }
+  ];
+
   const scenarios = [
     {
       id: 1,
@@ -1972,32 +1981,96 @@ function DebugModal({ onClose, onTriggerScenario }) {
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#1A2F22]/60 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg border border-white/20 animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-bold text-[#1A2F22] text-xl">Symulator scenariuszy ostrzegawczych</h3>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <h3 className="font-bold text-[#1A2F22] text-xl">Panel Debug (Shift+D)</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full transition-all">
             <X size={20} className="text-[#9FB5AD]" />
           </button>
         </div>
-        <p className="text-sm text-[#5A7368] mb-6">
-          Kliknij przycisk obok scenariusza, aby go zasymulować. Zmodyfikuje to Twoją testową historię nastrojów.
-        </p>
 
-        <div className="space-y-4">
-          {scenarios.map(s => (
-            <div key={s.id} className="flex flex-col gap-2 p-4 bg-[#F5EFE6] rounded-xl border border-[#E8DDD0]">
-              <div className="flex justify-between items-start">
-                <h4 className="font-bold text-[#1E5C36]">{s.name}</h4>
-                <button 
-                  onClick={() => onTriggerScenario(s.id)} 
-                  className="px-4 py-2 bg-[#2D9E6B] text-white text-xs font-bold rounded-lg hover:bg-[#1E5C36] transition-colors whitespace-nowrap ml-4 shadow-sm"
-                >
-                  Odpal ten alert
-                </button>
-              </div>
-              <p className="text-xs text-[#5A7368] leading-relaxed pr-24">{s.desc}</p>
-            </div>
+        <div className="flex px-6 pt-4 border-b border-gray-100 gap-6 overflow-x-auto">
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`pb-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === t.id ? 'border-[#2D9E6B] text-[#1E5C36]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+              {t.label}
+            </button>
           ))}
+        </div>
+
+        <div className="p-6 overflow-y-auto">
+          {activeTab === "scenarios" && (
+            <div className="space-y-4">
+              <p className="text-sm text-[#5A7368] mb-4">Wybierz jeden ze scenariuszy, aby automatycznie spreparować historię i wyzwolić powiadomienie.</p>
+              {scenarios.map(s => (
+                <div key={s.id} className="flex flex-col gap-2 p-4 bg-[#F5EFE6] rounded-xl border border-[#E8DDD0]">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-bold text-[#1E5C36]">{s.name}</h4>
+                    <button onClick={() => actions.triggerScenario(s.id)} className="px-4 py-2 bg-[#2D9E6B] text-white text-xs font-bold rounded-lg hover:bg-[#1E5C36] transition-colors whitespace-nowrap ml-4 shadow-sm">
+                      Odpal
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#5A7368] leading-relaxed pr-16">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "tasks" && (
+            <div className="space-y-4">
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-[#1A2F22] mb-1">Dodaj zadania z bazy</h4>
+                  <p className="text-xs text-gray-500">Dodaje losowe, niewykorzystane zadania do backlogu.</p>
+                </div>
+                <button onClick={actions.addRandomTasks} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-200">Uruchom</button>
+              </div>
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-red-600 mb-1">Wyczyść wszystkie zadania</h4>
+                  <p className="text-xs text-gray-500">Usuwa całkowicie listę zadań i harmonogramu w aplikacji.</p>
+                </div>
+                <button onClick={actions.clearTasks} className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 text-xs font-bold rounded-lg hover:bg-red-100">Uruchom</button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "moods" && (
+            <div className="space-y-4">
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-[#1A2F22] mb-1">Generuj losową historię</h4>
+                  <p className="text-xs text-gray-500">Zapełnia 15 dni wstecz losowymi nastrojami.</p>
+                </div>
+                <button onClick={actions.generateFakeMoods} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-200">Uruchom</button>
+              </div>
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-red-600 mb-1">Wyczyść nastroje</h4>
+                  <p className="text-xs text-gray-500">Usuwa całą zarejestrowaną dotąd historię nastrojów z bazy.</p>
+                </div>
+                <button onClick={actions.clearMoods} className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 text-xs font-bold rounded-lg hover:bg-red-100">Uruchom</button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "time" && (
+            <div className="space-y-4">
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-[#1A2F22] mb-1">Cofnij o 1 dzień</h4>
+                  <p className="text-xs text-gray-500">Oszukuje zegar aplikacji, cofając go o równe 24 godziny.</p>
+                </div>
+                <button onClick={actions.timeTravelBack} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-200">Cofnij</button>
+              </div>
+              <div className="p-4 border border-gray-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-[#1A2F22] mb-1">Przewiń o 1 dzień do przodu</h4>
+                  <p className="text-xs text-gray-500">Oszukuje zegar aplikacji, przyspieszając go o 24 godziny.</p>
+                </div>
+                <button onClick={actions.timeTravelForward} className="px-4 py-2 bg-gray-100 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-200">Przyspiesz</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -2068,7 +2141,7 @@ export default function App() {
         newMoods.push(generateFakeMood(1, 0));
         newMoods.push(generateFakeMood(2, 1));
       } else if (scenarioId === 2) {
-        for(let i=0; i<7; i++) newMoods.push(generateFakeMood(i, 3));
+        for (let i = 0; i < 7; i++) newMoods.push(generateFakeMood(i, 3));
       } else if (scenarioId === 3) {
         const day = nowL.getDay();
         let diffToMonday = day === 0 ? -6 : 1 - day;
@@ -2086,16 +2159,77 @@ export default function App() {
       }
       return newMoods;
     });
-    
+
     setShowDebugModal(false);
     add("Zasymulowano scenariusz " + scenarioId);
+  };
+
+  const debugActions = {
+    triggerScenario: handleTriggerScenario,
+
+    clearTasks: () => {
+      setTasks([]);
+      add('Usunięto wszystkie zadania (Test)');
+      setShowDebugModal(false);
+    },
+
+    addRandomTasks: () => {
+      let totalCount = 0;
+      setTasks(prev => {
+        const existingTitles = new Set(prev.map(t => t.title));
+        const available = INIT_TASKS.filter(t => !existingTitles.has(t.title));
+        if (available.length === 0) {
+          totalCount = prev.length;
+          return prev;
+        }
+        const shuffled = [...available].sort(() => Math.random() - 0.5);
+        const picked = shuffled.slice(0, Math.min(20, available.length));
+        totalCount = prev.length + picked.length;
+        const newTasks = picked.map(t => ({
+          ...t, id: Date.now() + Math.random(), done: t.done, sMins: null, eMins: null, pDate: null
+        }));
+        return [...prev, ...newTasks];
+      });
+      setTimeout(() => { add(`Zadania w obiegu: ${totalCount}/${INIT_TASKS.length} (Test)`); setShowDebugModal(false); }, 0);
+    },
+
+    clearMoods: () => {
+      setMoods([]);
+      add('Historia nastrojów wyczyszczona (Test)', 'info');
+      setShowDebugModal(false);
+    },
+
+    generateFakeMoods: () => {
+      const fakeMoods = [];
+      for (let i = 14; i >= 0; i--) {
+        const d = getNow();
+        d.setDate(d.getDate() - i);
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        fakeMoods.push({ id: Date.now() + i, d: ds, v: Math.floor(Math.random() * 5) + 1, note: "Testowa notatka" });
+      }
+      setMoods(fakeMoods);
+      add('Sztuczna historia nastrojów wygenerowana (Test)', 'success');
+      setShowDebugModal(false);
+    },
+
+    timeTravelBack: () => {
+      setOffsetDays(prev => prev - 1);
+      setSelectedDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
+      add('Aplikacja: Przesunięto w czasie o 1 dzień wstecz (Test)', 'info');
+    },
+
+    timeTravelForward: () => {
+      setOffsetDays(prev => prev + 1);
+      setSelectedDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; });
+      add('Aplikacja: Przesunięto w czasie o 1 dzień do przodu (Test)', 'info');
+    }
   };
 
   useEffect(() => {
     if (view === "landing" && user) setView("app");
   }, [user, view]);
 
-  // --- SKRÓTY KLAWISZOWE: Shift+T (losowe zadania) i Shift+Y (wyczyść zadania) ---
+  // --- SKRÓTY KLAWISZOWE: Debug Modal (Shift+D) ---
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ignoruj, gdy użytkownik pisze w polu tekstowym lub nie jest w widoku apki
@@ -2108,91 +2242,11 @@ export default function App() {
         setShowDebugModal(true);
         return;
       }
-
-      // Shift+T → Dodaj 20 losowych zadań z puli INIT_TASKS (bez duplikatów)
-      if (e.shiftKey && e.key === 'T') {
-        e.preventDefault();
-
-        // Oblicz dostępne zadania PRZED setTasks, żeby mieć licznik
-        let totalCount = 0;
-
-        setTasks(prev => {
-          const existingTitles = new Set(prev.map(t => t.title));
-          const available = INIT_TASKS.filter(t => !existingTitles.has(t.title));
-
-          if (available.length === 0) {
-            totalCount = prev.length;
-            return prev;
-          }
-
-          const shuffled = [...available].sort(() => Math.random() - 0.5);
-          const picked = shuffled.slice(0, Math.min(20, available.length));
-          totalCount = prev.length + picked.length;
-
-          const newTasks = picked.map(t => ({
-            ...t,
-            id: Date.now() + Math.random(),
-            done: t.done,
-            sMins: null,
-            eMins: null,
-            pDate: null
-          }));
-
-          return [...prev, ...newTasks];
-        });
-
-        // Użyj setTimeout żeby totalCount zdążył się ustawić w callbacku
-        setTimeout(() => add(`Zadania w obiegu: ${totalCount}/${INIT_TASKS.length} (Shift+T)`), 0);
-      }
-
-      // Shift+Y → Wyczyść WSZYSTKIE zadania
-      if (e.shiftKey && e.key === 'Y') {
-        e.preventDefault();
-        setTasks([]);
-        add('Usunięto wszystkie zadania (Shift+Y)');
-      }
-
-      // Shift+C → Wyczyść historię nastrojów
-      if (e.shiftKey && e.key.toLowerCase() === 'c') {
-        e.preventDefault();
-        setMoods([]);
-        add('Historia nastrojów wyczyszczona (Test)', 'info');
-      }
-
-      // Shift+V → Wygeneruj sztuczną historię
-      if (e.shiftKey && e.key.toLowerCase() === 'v') {
-        e.preventDefault();
-        const fakeMoods = [];
-        for(let i=14; i>=0; i--) {
-           const d = getNow();
-           d.setDate(d.getDate() - i);
-           const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-           fakeMoods.push({ id: Date.now() + i, d: ds, v: Math.floor(Math.random() * 5) + 1, note: "Testowa notatka" });
-        }
-        setMoods(fakeMoods);
-        add('Sztuczna historia nastrojów wygenerowana (Test)', 'success');
-      }
-
-      // Shift+B → Dzień do tyłu
-      if (e.shiftKey && e.key.toLowerCase() === 'b') {
-        e.preventDefault();
-        setOffsetDays(prev => prev - 1);
-        setSelectedDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() - 1); return nd; });
-        add('Aplikacja: Przesunięto w czasie o 1 dzień wstecz (Test)', 'info');
-      }
-
-      // Shift+N → Dzień do przodu
-      if (e.shiftKey && e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        setOffsetDays(prev => prev + 1);
-        setSelectedDate(d => { const nd = new Date(d); nd.setDate(nd.getDate() + 1); return nd; });
-        add('Aplikacja: Przesunięto w czasie o 1 dzień do przodu (Test)', 'info');
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [view, setTasks, setMoods, add, getNow]);
+  }, [view]);
 
   useEffect(() => {
     const nowLocal = getNow();
@@ -2268,8 +2322,6 @@ export default function App() {
     const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
     setTasks(prevTasks => {
-      let currentPointer = timelineStart * 60;
-
       // 1. Wyodrębniamy sztywne bloki (dla selectedDate)
       const lockedBlocks = prevTasks
         .filter(t => t.isLocked && t.t && checkIsDate(t.t, selectedDate))
@@ -2299,12 +2351,11 @@ export default function App() {
           return 0;
         });
 
-      flexTasks.forEach(t => {
+      // Przygotowujemy dane dla każdego elastycznego zadania
+      const flexData = flexTasks.map(t => {
         const durMatch = t.duration ? t.duration.match(/(\d+)/) : null;
         const duration = durMatch ? parseInt(durMatch[1]) : 45;
         const visualDuration = Math.max(duration, 45);
-
-        // --- DYNAMICZNY BUFOR (Zasada 52/17) ---
         let breakTime = 0;
         if (duration >= 50) {
           breakTime = 17;
@@ -2313,27 +2364,47 @@ export default function App() {
         } else {
           breakTime = 3;
         }
-
-        let fits = false;
-        while (!fits) {
-          const collision = lockedBlocks.find(b =>
-            (currentPointer < b.eMins && (currentPointer + visualDuration) > b.sMins)
-          );
-          if (collision) {
-            currentPointer = collision.eMins + breakTime;
-          } else {
-            fits = true;
-          }
-        }
-
-        if (currentPointer + visualDuration <= dayLimitMins) {
-          const idx = updatedTasks.findIndex(ut => ut.id === t.id);
-          if (idx !== -1) {
-            updatedTasks[idx] = { ...updatedTasks[idx], sMins: currentPointer, eMins: currentPointer + duration, pDate: dateStr };
-          }
-          currentPointer += (visualDuration + breakTime);
-        }
+        return { ...t, duration, visualDuration, breakTime };
       });
+
+      const placed = new Set(); // ID zadań już umieszczonych w planie
+
+      // Budujemy listę slotów (luk) między zablokowanymi blokami
+      const gaps = [];
+      let gapStart = timelineStart * 60;
+      for (const block of lockedBlocks) {
+        if (gapStart < block.sMins) {
+          gaps.push({ start: gapStart, end: block.sMins });
+        }
+        gapStart = Math.max(gapStart, block.eMins);
+      }
+      // Ostatnia luka po ostatnim zablokowanym bloku do końca dnia
+      if (gapStart < dayLimitMins) {
+        gaps.push({ start: gapStart, end: dayLimitMins });
+      }
+
+      // Dla każdej luki próbujemy wypełnić ją zadaniami z kolejki
+      for (const gap of gaps) {
+        let pointer = gap.start;
+        // Iterujemy po zadaniach w kolejności priorytetu
+        for (const ft of flexData) {
+          if (placed.has(ft.id)) continue; // już umieszczone
+
+          const neededSpace = ft.visualDuration;
+          // Sprawdź czy zadanie mieści się w pozostałej części luki
+          if (pointer + neededSpace <= gap.end) {
+            const idx = updatedTasks.findIndex(ut => ut.id === ft.id);
+            if (idx !== -1) {
+              updatedTasks[idx] = { ...updatedTasks[idx], sMins: pointer, eMins: pointer + ft.duration, pDate: dateStr };
+            }
+            placed.add(ft.id);
+            pointer += neededSpace + ft.breakTime;
+            // Jeśli pointer po przerwie wykroczył poza lukę, przerywamy tę lukę
+            if (pointer >= gap.end) break;
+          }
+          // Jeśli zadanie się nie mieści, sprawdzamy kolejne (mniejsze) zadania
+        }
+      }
 
       return updatedTasks;
     });
@@ -2369,7 +2440,7 @@ export default function App() {
     let taskToSave = { ...t };
     const durMatch = taskToSave.duration ? taskToSave.duration.match(/(\d+)/) : null;
     let durationAlert = false;
-    
+
     if (durMatch && parseInt(durMatch[1]) < 15) {
       taskToSave.duration = "15 min";
       durationAlert = true;
@@ -2591,7 +2662,7 @@ export default function App() {
           )}
 
           {showMoodModal && <MoodModal onClose={() => setShowMoodModal(false)} onAdd={addMood} />}
-          {showDebugModal && <DebugModal onClose={() => setShowDebugModal(false)} onTriggerScenario={handleTriggerScenario} />}
+          {showDebugModal && <DebugModal onClose={() => setShowDebugModal(false)} actions={debugActions} />}
         </>
       )}
     </div>
