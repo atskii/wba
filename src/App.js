@@ -572,7 +572,7 @@ function Sidebar({ active, onNav, user, onLogout, collapsed, setCollapsed, selec
                 </div>
               )}
 
-              <button onClick={() => onNav(n.id)} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all relative overflow-hidden ${active === n.id ? (hasAlert ? "bg-[#1e3a2b] text-white shadow-md" : "bg-[#1E5C36] text-white shadow-lg shadow-green-900/20") : (hasAlert ? "bg-[#1e3a2b] text-white shadow-md hover:bg-[#162c20]" : "text-[#5A7368] hover:bg-[#F5EFE6]")}`}>
+              <button onClick={() => { if (hasAlert) onDismissAlert(); onNav(n.id); }} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all relative overflow-hidden ${active === n.id ? (hasAlert ? "bg-[#1e3a2b] text-white shadow-md" : "bg-[#1E5C36] text-white shadow-lg shadow-green-900/20") : (hasAlert ? "bg-[#1e3a2b] text-white shadow-md hover:bg-[#162c20]" : "text-[#5A7368] hover:bg-[#F5EFE6]")}`}>
 
                 {hasAlert && (
                   <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#D32F2F]"></div>
